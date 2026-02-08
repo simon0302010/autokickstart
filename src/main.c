@@ -4,17 +4,35 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
-FILE *ks_file;
+#include "cJSON/cJSON.h"
 
-static void print_input(GtkWidget *widget, gpointer data) {
-    const char *text = gtk_editable_get_text(GTK_EDITABLE(data));
-    fprintf(ks_file, "%s", text);
-    g_print("Input: %s\n", text);
+struct KickstartOptions {
+    GtkWidget *password;
+    GtkWidget *username;
+};
+
+FILE *ks_file;
+struct KickstartOptions options;
+
+static void build_iso() {
+    const char *username = gtk_editable_get_text(GTK_EDITABLE(options.username));
+    const char *password = gtk_editable_get_text(GTK_EDITABLE(options.password));
+    g_print("Username:%s, Password: %s", username, password);
 }
 
-static void clear_input(GtkWidget *widget, gpointer data) {
-    gtk_editable_delete_text(GTK_EDITABLE(data), 0, -1);
-    g_print("Cleared input\n");
+static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+    GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(source_object), res, NULL);
+
+    if (file != NULL) {
+        char *file_path = g_file_get_path(file);
+        g_print("Path: %s", file_path);
+    }
+}
+
+static void open_file(GtkWidget *window) {
+    GtkFileDialog *dialog;
+    dialog = gtk_file_dialog_new();
+    gtk_file_dialog_open(dialog, GTK_WINDOW(window), NULL, on_cfg_open_finish, NULL);
 }
 
 static bool is_fedora() {
@@ -78,6 +96,17 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *username_entry = gtk_entry_new();
     gtk_widget_set_hexpand(username_entry, TRUE);
     gtk_grid_attach(GTK_GRID(form_grid), username_entry, 1, 2, 1, 1);
+    options.username = username_entry;
+
+    // input 2
+    label = gtk_label_new("Password:");
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(form_grid), label, 0, 3, 1, 1);
+
+    GtkWidget *password_entry = gtk_entry_new();
+    gtk_widget_set_hexpand(password_entry, TRUE);
+    gtk_grid_attach(GTK_GRID(form_grid), password_entry, 1, 3, 1, 1);
+    options.password = password_entry;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
@@ -87,8 +116,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *open_btn = gtk_button_new_with_label("Open File");
     GtkWidget *build_btn = gtk_button_new_with_label("Build ISO");
 
-    g_signal_connect(open_btn, "clicked", G_CALLBACK(clear_input), username_entry);
-    g_signal_connect(build_btn, "clicked", G_CALLBACK(print_input), username_entry);
+    g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file), window);
+    g_signal_connect_swapped(build_btn, "clicked", G_CALLBACK(build_iso), NULL);
 
     gtk_box_append(GTK_BOX(button_box), open_btn);
     gtk_box_append(GTK_BOX(button_box), build_btn);

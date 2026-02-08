@@ -8,7 +8,8 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK4 REQUIRED gtk4)
 
 file(GLOB SOURCES
-    "src/*.c"
+    "src/*.c",
+    "src/*/*.c"
 )
 
 add_executable(autokickstart ${SOURCES})

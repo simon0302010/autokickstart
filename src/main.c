@@ -1,17 +1,24 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
 #include <unistd.h>
 
 #include "cJSON/cJSON.h"
+#include "utils/utils.h"
 
 struct KickstartOptions {
     GtkWidget *password;
     GtkWidget *username;
 };
 
-FILE *ks_file;
+struct OpenedFile {
+    char *path;
+    FILE *file;
+};
+
+struct OpenedFile ks_file;
 struct KickstartOptions options;
 
 static void build_iso() {
@@ -126,10 +133,27 @@ static void activate(GtkApplication *app, gpointer user_data) {
 }
 
 int main(int argc, char **argv) {
-    ks_file = fopen("/tmp/mbo.ks", "w");
-    if (ks_file == NULL) {
-        printf("failed to create /tmp/mbo.ks");
-        exit(1);
+    seed_rng();
+    char *ks_name = rand_str(20);
+    if (!ks_name) {
+        printf("failed to create random filename for kickstart file\n");
+        return 1;
+    }
+    char *ks_path = malloc(strlen("/tmp/") + strlen(ks_name) + strlen(".ks") + 1);
+    if (!ks_path) {
+        printf("failed to allocate string for kickstart file path\n");
+        free(ks_name);
+        return 1;
+    }
+    sprintf(ks_path, "/tmp/%s.ks", ks_name);
+    free(ks_name);
+
+    ks_file.path = ks_path;
+    ks_file.file = fopen(ks_path, "w");
+    if (ks_file.file == NULL) {
+        printf("failed to create %s\n", ks_path);
+        free(ks_path);
+        return 1;
     }
 
     GtkApplication *app;

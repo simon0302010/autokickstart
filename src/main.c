@@ -9,6 +9,7 @@
 #include "utils/utils.h"
 
 struct KickstartOptions {
+    char *path;
     GtkWidget *password;
     GtkWidget *username;
 };
@@ -70,6 +71,27 @@ static int load_file(const char *path) {
     return 0;
 }
 
+static int save_file(const char *path) {
+    cJSON *root = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(root, "username", gtk_editable_get_text(GTK_EDITABLE(options.username)));
+    cJSON_AddStringToObject(root, "password", gtk_editable_get_text(GTK_EDITABLE(options.password)));
+
+    char *json_str = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    FILE *f = fopen(path, "w");
+    if (!f) {
+        free(json_str);
+        return 1;
+    }
+
+    fputs(json_str, f);
+    fclose(f);
+    free(json_str);
+    return 0;
+}
+
 static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
     GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(source_object), res, NULL);
 
@@ -78,8 +100,15 @@ static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpoint
         g_print("Loading configuration file from: %s", file_path);
         
         if (load_file(file_path) != 0) {
+            g_free(file_path);
             show_alert(window, "Failed to load file");
+        } else {
+            if (options.path != NULL) {
+                g_free(options.path);
+            }
+            options.path = file_path;
         }
+        g_object_unref(file);
     }
 }
 
@@ -87,6 +116,7 @@ static void open_file_dialog(GtkWidget *window) {
     GtkFileDialog *dialog;
     dialog = gtk_file_dialog_new();
     gtk_file_dialog_open(dialog, GTK_WINDOW(window), NULL, on_cfg_open_finish, NULL);
+    g_object_unref(dialog);
 }
 
 static bool is_fedora() {
@@ -218,7 +248,14 @@ int main(int argc, char **argv) {
     status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app);
 
-    free(ks_file.path);
+    if (ks_file.file != NULL) {
+        fclose(ks_file.file);
+    }
+    g_free(ks_file.path);
+    
+    if (options.path != NULL) {
+        g_free(options.path);
+    }
 
     return status;
 }

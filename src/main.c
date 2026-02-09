@@ -132,29 +132,37 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_window_present(GTK_WINDOW(window));
 }
 
-int main(int argc, char **argv) {
-    seed_rng();
+struct OpenedFile create_temp_ks() {
+    struct OpenedFile open_file;
+
     char *ks_name = rand_str(20);
     if (!ks_name) {
         printf("failed to create random filename for kickstart file\n");
-        return 1;
+        exit(1);
     }
     char *ks_path = malloc(strlen("/tmp/") + strlen(ks_name) + strlen(".ks") + 1);
     if (!ks_path) {
         printf("failed to allocate string for kickstart file path\n");
         free(ks_name);
-        return 1;
+        exit(1);
     }
     sprintf(ks_path, "/tmp/%s.ks", ks_name);
     free(ks_name);
 
-    ks_file.path = ks_path;
-    ks_file.file = fopen(ks_path, "w");
-    if (ks_file.file == NULL) {
+    open_file.path = ks_path;
+    open_file.file = fopen(ks_path, "w");
+    if (open_file.file == NULL) {
         printf("failed to create %s\n", ks_path);
         free(ks_path);
-        return 1;
+        exit(1);
     }
+
+    return open_file;
+}
+
+int main(int argc, char **argv) {
+    seed_rng();
+    ks_file = create_temp_ks();
 
     GtkApplication *app;
     int status;
@@ -163,6 +171,8 @@ int main(int argc, char **argv) {
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
     status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app);
+
+    free(ks_file.path);
 
     return status;
 }

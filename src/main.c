@@ -18,6 +18,8 @@ struct OpenedFile {
     FILE *file;
 };
 
+GtkWidget *window;
+
 struct OpenedFile ks_file;
 struct KickstartOptions options;
 
@@ -27,45 +29,61 @@ static void build_iso() {
     g_print("Username:%s, Password: %s", username, password);
 }
 
+static int load_file(const char *path) {
+    char *buffer = NULL;
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        return 2;
+    }
+    
+    fseek(f, 0, SEEK_END);
+    long length = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    
+    buffer = malloc(length);
+    if (!buffer) {
+        fclose(f);
+        return 1;
+    }
+    
+    fread(buffer, 1, length, f);
+    fclose(f);
+    
+    cJSON *root = cJSON_Parse(buffer);
+    free(buffer);
+    
+    if (!root) {
+        return 1;
+    }
+    
+    cJSON *username_item = cJSON_GetObjectItem(root, "username");
+    cJSON *password_item = cJSON_GetObjectItem(root, "password");
+    
+    if (username_item && username_item->valuestring) {
+        gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
+    }
+    if (password_item && password_item->valuestring) {
+        gtk_editable_set_text(GTK_EDITABLE(options.password), password_item->valuestring);
+    }
+    
+    cJSON_Delete(root);
+    return 0;
+}
+
 static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
     GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(source_object), res, NULL);
 
     if (file != NULL) {
         char *file_path = g_file_get_path(file);
         g_print("Loading configuration file from: %s", file_path);
-
-        char *buffer = 0;
-        FILE *f = fopen(file_path, "rb");
-        if (f) {
-            fseek(f, 0, SEEK_END);
-            long length = ftell(f);
-            fseek(f, 0, SEEK_SET);
-            buffer = malloc(length);
-            if (buffer) {
-                fread(buffer, 1, length, f);
-            }
-            fclose(f);
-        }
-
-        if (buffer) {
-            cJSON *root = cJSON_Parse(buffer);
-
-            cJSON *username_item = cJSON_GetObjectItem(root, "username");
-            cJSON *password_item = cJSON_GetObjectItem(root, "password");
-
-            if (username_item && username_item->valuestring) {
-                gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
-            }
-            if (password_item && password_item->valuestring) {
-                gtk_editable_set_text(GTK_EDITABLE(options.password), password_item->valuestring);
-            }
-
-            free(buffer);
+        
+        if (load_file(file_path) != 0) {
+            show_alert(window, "Failed to load file");
         }
     }
 }
 
-static void open_file(GtkWidget *window) {
+static void open_file_dialog(GtkWidget *window) {
     GtkFileDialog *dialog;
     dialog = gtk_file_dialog_new();
     gtk_file_dialog_open(dialog, GTK_WINDOW(window), NULL, on_cfg_open_finish, NULL);
@@ -91,7 +109,6 @@ static bool is_fedora() {
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {
-    GtkWidget *window;
     GtkWidget *main_box;
     GtkWidget *scrolled_window;
     GtkWidget *form_grid;
@@ -152,7 +169,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *open_btn = gtk_button_new_with_label("Open File");
     GtkWidget *build_btn = gtk_button_new_with_label("Build ISO");
 
-    g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file), window);
+    g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file_dialog), window);
     g_signal_connect_swapped(build_btn, "clicked", G_CALLBACK(build_iso), NULL);
 
     gtk_box_append(GTK_BOX(button_box), open_btn);

@@ -1,8 +1,12 @@
+#include "gtk/gtk.h"
+#include "gtk/gtkshortcut.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdint.h>
 #include <limits.h>
+#include <gtk/gtk.h>
 
 void seed_rng() {
     struct timeval tp;
@@ -27,4 +31,10 @@ char *rand_str(size_t length) {
 
     result[length] = '\0';
     return result;
+}
+
+void show_alert(GtkWidget *window, const char* msg) {
+    GtkAlertDialog *dialog = gtk_alert_dialog_new("%s", msg);
+    gtk_alert_dialog_set_buttons(dialog, (const char *[]) { "Ok", NULL });
+    gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
 }

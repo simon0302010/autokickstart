@@ -82,7 +82,7 @@ static int load_file(const char *path) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.locale), locale_item->valueint);
     }
     if (layout_item && layout_item->valueint) {
-        gtk_drop_down_set_selected(GTK_DROP_DOWN(layout_item), layout_item->valueint);
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.layout), layout_item->valueint);
     }
 
     cJSON_Delete(root);

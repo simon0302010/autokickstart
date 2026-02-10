@@ -7,13 +7,16 @@
 
 #include "cJSON/cJSON.h"
 #include "gtk/gtkdropdown.h"
+#include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
+#include "utils/locales.h"
 
 struct KickstartOptions {
     char *path;
     GtkWidget *password;
     GtkWidget *username;
-    GtkWidget *dropdown;
+    GtkWidget *graphics_mode;
+    GtkWidget *locale;
 };
 
 struct OpenedFile {
@@ -28,11 +31,7 @@ struct OpenedFile ks_file;
 struct KickstartOptions options;
 
 static void build_iso() {
-    const char *username = gtk_editable_get_text(GTK_EDITABLE(options.username));
-    const char *password = gtk_editable_get_text(GTK_EDITABLE(options.password));
-    gpointer dropdown_item = gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.dropdown));
-    const char *dropdown = gtk_string_object_get_string(GTK_STRING_OBJECT(dropdown_item));
-    g_print("Username:%s, Password: %s, Dropdown: %s\n", username, password, dropdown);
+    printf("Coming soon");
 }
 
 static int load_file(const char *path) {
@@ -64,7 +63,7 @@ static int load_file(const char *path) {
     
     cJSON *username_item = cJSON_GetObjectItem(root, "username");
     cJSON *password_item = cJSON_GetObjectItem(root, "password");
-    cJSON *dropdown_item = cJSON_GetObjectItem(root, "dropdown");
+    cJSON *graphics_mode_item = cJSON_GetObjectItem(root, "graphics_mode");
     
     if (username_item && username_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
@@ -72,8 +71,8 @@ static int load_file(const char *path) {
     if (password_item && password_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.password), password_item->valuestring);
     }
-    if (dropdown_item && dropdown_item->valueint) {
-        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.dropdown), dropdown_item->valueint);
+    if (graphics_mode_item && graphics_mode_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.graphics_mode), graphics_mode_item->valueint);
     }
     
     cJSON_Delete(root);
@@ -85,7 +84,7 @@ static int save_file(const char *path) {
 
     cJSON_AddStringToObject(root, "username", gtk_editable_get_text(GTK_EDITABLE(options.username)));
     cJSON_AddStringToObject(root, "password", gtk_editable_get_text(GTK_EDITABLE(options.password)));
-    cJSON_AddNumberToObject(root, "dropdown", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.dropdown)));
+    cJSON_AddNumberToObject(root, "graphics_mode", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.graphics_mode)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
@@ -252,14 +251,27 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_grid_attach(GTK_GRID(form_grid), password_entry, 1, 1, 1, 1);
     options.password = password_entry;
 
-    // dropdown
+    // graphics mode dropdown
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Mode:"), 0, 2, 1, 1);
 
-    const char *options_array[] = {"Graphical", "Text", NULL};
-    GtkWidget *dropdown = gtk_drop_down_new_from_strings(options_array);
-    gtk_widget_set_hexpand(dropdown, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), dropdown, 1, 2, 1, 1);
-    options.dropdown = dropdown;
+    const char *graphics_modes_array[] = {"Graphical", "Text", NULL};
+    GtkWidget *graphics_mode = gtk_drop_down_new_from_strings(graphics_modes_array);
+    gtk_widget_set_hexpand(graphics_mode, TRUE);
+    gtk_grid_attach(GTK_GRID(form_grid), graphics_mode, 1, 2, 1, 1);
+    options.graphics_mode = graphics_mode;
+
+    // locale dropdown
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("System Locale:"), 0, 3, 1, 1);
+
+    const char **names = get_names();
+    GtkWidget *locale_chooser = gtk_drop_down_new_from_strings(names);
+    free(names);
+    gtk_widget_set_hexpand(locale_chooser, TRUE);
+    gtk_drop_down_set_enable_search(GTK_DROP_DOWN(locale_chooser), TRUE);
+    gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(locale_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(locale_chooser), get_current_system_locale_index());
+    gtk_grid_attach(GTK_GRID(form_grid), locale_chooser, 1, 3, 1, 1);
+    options.locale = locale_chooser;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

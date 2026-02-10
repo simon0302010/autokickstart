@@ -1,3 +1,4 @@
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -162,11 +163,50 @@ struct Lang locales[] = {
     { NULL, NULL }
 };
 
+size_t locales_count = 0;
+
+static void get_locales_count() {
+    if (locales_count != 0) return;
+    locales_count = 0;
+    while (locales[locales_count].name != NULL) {
+        locales_count++;
+    }
+}
+
 const char *get_locale(const char* name) {
     for (size_t i = 0; locales[i].name != NULL; i++) {
         if (strcmp(locales[i].name, name) == 0) {
-            return locales[i].name;
+            return locales[i].id;
         }
     }
     return NULL;
+}
+
+const char **get_names() {
+    get_locales_count();
+
+    const char **names = malloc((locales_count + 1) * sizeof(char *));
+    if (!names) return NULL;
+
+    for (size_t i = 0; i < locales_count; i++) {
+        names[i] = locales[i].name;
+    }
+    names[locales_count] = NULL;
+
+    return names;
+}
+
+int get_current_system_locale_index() {
+    get_locales_count();
+
+    const char *system_locale = setlocale(LC_ALL, NULL);
+    if (!system_locale) return -1;
+
+    for (size_t i = 0; i < locales_count; i++) {
+        if (strcmp(locales[i].id, system_locale) == 0) {
+            return i;
+        }
+    }
+
+    return -1;
 }

@@ -10,6 +10,7 @@
 #include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
+#include "locale/kb.h"
 
 struct KickstartOptions {
     char *path;
@@ -17,6 +18,7 @@ struct KickstartOptions {
     GtkWidget *username;
     GtkWidget *graphics_mode;
     GtkWidget *locale;
+    GtkWidget *layout;
 };
 
 struct OpenedFile {
@@ -65,6 +67,7 @@ static int load_file(const char *path) {
     cJSON *password_item = cJSON_GetObjectItem(root, "password");
     cJSON *graphics_mode_item = cJSON_GetObjectItem(root, "graphics_mode");
     cJSON *locale_item = cJSON_GetObjectItem(root, "locale");
+    cJSON *layout_item = cJSON_GetObjectItem(root, "keyboard");
     
     if (username_item && username_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
@@ -78,6 +81,9 @@ static int load_file(const char *path) {
     if (locale_item && locale_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.locale), locale_item->valueint);
     }
+    if (layout_item && layout_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(layout_item), layout_item->valueint);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -90,6 +96,7 @@ static int save_file(const char *path) {
     cJSON_AddStringToObject(root, "password", gtk_editable_get_text(GTK_EDITABLE(options.password)));
     cJSON_AddNumberToObject(root, "graphics_mode", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.graphics_mode)));
     cJSON_AddNumberToObject(root, "locale", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.locale)));
+    cJSON_AddNumberToObject(root, "keyboard", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.layout)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
@@ -268,15 +275,28 @@ static void activate(GtkApplication *app, gpointer user_data) {
     // locale dropdown
     gtk_grid_attach(GTK_GRID(form_grid), create_label("System Locale:"), 0, 3, 1, 1);
 
-    const char **names = get_names();
-    GtkWidget *locale_chooser = gtk_drop_down_new_from_strings(names);
-    free(names);
+    const char **locale_names = get_locale_names();
+    GtkWidget *locale_chooser = gtk_drop_down_new_from_strings(locale_names);
+    free(locale_names);
     gtk_widget_set_hexpand(locale_chooser, TRUE);
     gtk_drop_down_set_enable_search(GTK_DROP_DOWN(locale_chooser), TRUE);
     gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(locale_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(locale_chooser), get_current_system_locale_index("en_US"));
     gtk_grid_attach(GTK_GRID(form_grid), locale_chooser, 1, 3, 1, 1);
     options.locale = locale_chooser;
+
+    // layout dropdown
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Keyboard Layout:"), 0, 4, 1, 1);
+
+    const char **layout_names = get_layout_names();
+    GtkWidget *layout_chooser = gtk_drop_down_new_from_strings(layout_names);
+    free(layout_names);
+    gtk_widget_set_hexpand(layout_chooser, TRUE);
+    gtk_drop_down_set_enable_search(GTK_DROP_DOWN(layout_chooser), TRUE);
+    gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(layout_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(layout_chooser), find_current_system_layout_index("us"));
+    gtk_grid_attach(GTK_GRID(form_grid), layout_chooser, 1, 4, 1, 1);
+    options.layout = layout_chooser;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

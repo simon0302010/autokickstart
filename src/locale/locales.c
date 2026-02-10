@@ -173,6 +173,14 @@ static void get_locales_count() {
     }
 }
 
+const char *get_locale_id(int index) {
+    get_locales_count();
+    if (index < 0 || (size_t)index >= locales_count) {
+        return NULL;
+    }
+    return locales[index].id;
+}
+
 const char *get_locale(const char* name) {
     for (size_t i = 0; locales[i].name != NULL; i++) {
         if (strcmp(locales[i].name, name) == 0) {
@@ -182,7 +190,7 @@ const char *get_locale(const char* name) {
     return NULL;
 }
 
-const char **get_names() {
+const char **get_locale_names() {
     get_locales_count();
 
     const char **names = malloc((locales_count + 1) * sizeof(char *));
@@ -196,7 +204,7 @@ const char **get_names() {
     return names;
 }
 
-const char **get_ids() {
+const char **get_locale_ids() {
     get_locales_count();
 
     const char **ids = malloc((locales_count + 1) * sizeof(char *));
@@ -213,7 +221,7 @@ const char **get_ids() {
 int find_locale_index(const char *search) {
     get_locales_count();
 
-    const char **ids = get_ids();
+    const char **ids = get_locale_ids();
     if (!ids) return -1;
 
     for (size_t i = 0; i < locales_count; i++) {
@@ -225,6 +233,15 @@ int find_locale_index(const char *search) {
 
     free(ids);
     return -1;
+}
+
+const char *find_locale_full_id_string(const char *search) {
+    int locale_index = find_locale_index(search);
+    if (locale_index != -1) {
+        return locales[locale_index].id;
+    } else {
+        return NULL;
+    }
 }
 
 int get_current_system_locale_index(const char *alternative) {

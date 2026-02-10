@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "cJSON/cJSON.h"
+#include "glib-object.h"
 #include "utils/utils.h"
 
 struct KickstartOptions {
@@ -90,6 +91,14 @@ static int save_file(const char *path) {
     fclose(f);
     free(json_str);
     return 0;
+}
+
+static void on_save_file() {
+    if (options.path) {
+        if (save_file(options.path) != 0) {
+            show_alert(window, "Failed to save file");
+        }
+    }
 }
 
 static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
@@ -197,12 +206,15 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_append(GTK_BOX(main_box), button_box);
 
     GtkWidget *open_btn = gtk_button_new_with_label("Open File");
+    GtkWidget *save_btn = gtk_button_new_with_label("Save File");
     GtkWidget *build_btn = gtk_button_new_with_label("Build ISO");
 
     g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file_dialog), window);
+    g_signal_connect_swapped(save_btn, "clicked", G_CALLBACK(on_save_file), NULL);
     g_signal_connect_swapped(build_btn, "clicked", G_CALLBACK(build_iso), NULL);
 
     gtk_box_append(GTK_BOX(button_box), open_btn);
+    gtk_box_append(GTK_BOX(button_box), save_btn);
     gtk_box_append(GTK_BOX(button_box), build_btn);
 
     gtk_window_present(GTK_WINDOW(window));

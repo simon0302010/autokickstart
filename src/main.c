@@ -22,6 +22,7 @@ struct OpenedFile {
 };
 
 GtkWidget *window;
+GtkWidget *label;
 
 struct OpenedFile ks_file;
 struct KickstartOptions options;
@@ -197,12 +198,17 @@ static bool is_fedora() {
     return false;
 }
 
+static GtkWidget *create_label(const char *text) {
+    label = gtk_label_new(text);
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    return label;
+}
+
 static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *main_box;
     GtkWidget *scrolled_window;
     GtkWidget *form_grid;
     GtkWidget *button_box;
-    GtkWidget *label;
 
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Auto Kickstart");
@@ -231,34 +237,28 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), form_grid);
 
     // input
-    label = gtk_label_new("Username:");
-    gtk_widget_set_halign(label, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(form_grid), label, 0, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Username:"), 0, 0, 1, 1);
 
     GtkWidget *username_entry = gtk_entry_new();
     gtk_widget_set_hexpand(username_entry, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), username_entry, 1, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), username_entry, 1, 0, 1, 1);
     options.username = username_entry;
 
     // input 2
-    label = gtk_label_new("Password:");
-    gtk_widget_set_halign(label, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(form_grid), label, 0, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Password:"), 0, 1, 1, 1);
 
     GtkWidget *password_entry = gtk_entry_new();
     gtk_widget_set_hexpand(password_entry, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), password_entry, 1, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), password_entry, 1, 1, 1, 1);
     options.password = password_entry;
 
     // dropdown
-    label = gtk_label_new("Mode:");
-    gtk_widget_set_halign(label, GTK_ALIGN_START);
-    gtk_grid_attach(GTK_GRID(form_grid), label, 0, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Mode:"), 0, 2, 1, 1);
 
     const char *options_array[] = {"Graphical", "Text", NULL};
     GtkWidget *dropdown = gtk_drop_down_new_from_strings(options_array);
     gtk_widget_set_hexpand(dropdown, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), dropdown, 1, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), dropdown, 1, 2, 1, 1);
     options.dropdown = dropdown;
 
     // button box at bottom

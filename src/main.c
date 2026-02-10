@@ -6,14 +6,14 @@
 #include <unistd.h>
 
 #include "cJSON/cJSON.h"
-#include "glib-object.h"
-#include "glib.h"
+#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 
 struct KickstartOptions {
     char *path;
     GtkWidget *password;
     GtkWidget *username;
+    GtkWidget *dropdown;
 };
 
 struct OpenedFile {
@@ -29,7 +29,9 @@ struct KickstartOptions options;
 static void build_iso() {
     const char *username = gtk_editable_get_text(GTK_EDITABLE(options.username));
     const char *password = gtk_editable_get_text(GTK_EDITABLE(options.password));
-    g_print("Username:%s, Password: %s\n", username, password);
+    gpointer dropdown_item = gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.dropdown));
+    const char *dropdown = gtk_string_object_get_string(GTK_STRING_OBJECT(dropdown_item));
+    g_print("Username:%s, Password: %s, Dropdown: %s\n", username, password, dropdown);
 }
 
 static int load_file(const char *path) {
@@ -61,12 +63,16 @@ static int load_file(const char *path) {
     
     cJSON *username_item = cJSON_GetObjectItem(root, "username");
     cJSON *password_item = cJSON_GetObjectItem(root, "password");
+    cJSON *dropdown_item = cJSON_GetObjectItem(root, "dropdown");
     
     if (username_item && username_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
     }
     if (password_item && password_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.password), password_item->valuestring);
+    }
+    if (dropdown_item && dropdown_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.dropdown), dropdown_item->valueint);
     }
     
     cJSON_Delete(root);
@@ -78,6 +84,7 @@ static int save_file(const char *path) {
 
     cJSON_AddStringToObject(root, "username", gtk_editable_get_text(GTK_EDITABLE(options.username)));
     cJSON_AddStringToObject(root, "password", gtk_editable_get_text(GTK_EDITABLE(options.password)));
+    cJSON_AddNumberToObject(root, "dropdown", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.dropdown)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
@@ -242,6 +249,17 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_hexpand(password_entry, TRUE);
     gtk_grid_attach(GTK_GRID(form_grid), password_entry, 1, 3, 1, 1);
     options.password = password_entry;
+
+    // dropdown
+    label = gtk_label_new("Mode:");
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    gtk_grid_attach(GTK_GRID(form_grid), label, 0, 4, 1, 1);
+
+    const char *options_array[] = {"Graphical", "Text", NULL};
+    GtkWidget *dropdown = gtk_drop_down_new_from_strings(options_array);
+    gtk_widget_set_hexpand(dropdown, TRUE);
+    gtk_grid_attach(GTK_GRID(form_grid), dropdown, 1, 4, 1, 1);
+    options.dropdown = dropdown;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

@@ -9,7 +9,7 @@
 #include "gtk/gtkdropdown.h"
 #include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
-#include "utils/locales.h"
+#include "locale/locales.h"
 
 struct KickstartOptions {
     char *path;
@@ -64,6 +64,7 @@ static int load_file(const char *path) {
     cJSON *username_item = cJSON_GetObjectItem(root, "username");
     cJSON *password_item = cJSON_GetObjectItem(root, "password");
     cJSON *graphics_mode_item = cJSON_GetObjectItem(root, "graphics_mode");
+    cJSON *locale_item = cJSON_GetObjectItem(root, "locale");
     
     if (username_item && username_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
@@ -74,7 +75,10 @@ static int load_file(const char *path) {
     if (graphics_mode_item && graphics_mode_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.graphics_mode), graphics_mode_item->valueint);
     }
-    
+    if (locale_item && locale_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.locale), locale_item->valueint);
+    }
+
     cJSON_Delete(root);
     return 0;
 }
@@ -85,6 +89,7 @@ static int save_file(const char *path) {
     cJSON_AddStringToObject(root, "username", gtk_editable_get_text(GTK_EDITABLE(options.username)));
     cJSON_AddStringToObject(root, "password", gtk_editable_get_text(GTK_EDITABLE(options.password)));
     cJSON_AddNumberToObject(root, "graphics_mode", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.graphics_mode)));
+    cJSON_AddNumberToObject(root, "locale", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.locale)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

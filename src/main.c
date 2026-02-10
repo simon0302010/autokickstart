@@ -274,7 +274,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_hexpand(locale_chooser, TRUE);
     gtk_drop_down_set_enable_search(GTK_DROP_DOWN(locale_chooser), TRUE);
     gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(locale_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
-    gtk_drop_down_set_selected(GTK_DROP_DOWN(locale_chooser), get_current_system_locale_index());
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(locale_chooser), get_current_system_locale_index("en_US"));
     gtk_grid_attach(GTK_GRID(form_grid), locale_chooser, 1, 3, 1, 1);
     options.locale = locale_chooser;
 

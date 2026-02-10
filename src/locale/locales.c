@@ -196,7 +196,38 @@ const char **get_names() {
     return names;
 }
 
-int get_current_system_locale_index() {
+const char **get_ids() {
+    get_locales_count();
+
+    const char **ids = malloc((locales_count + 1) * sizeof(char *));
+    if (!ids) return NULL;
+
+    for (size_t i = 0; i < locales_count; i++) {
+        ids[i] = locales[i].id;
+    }
+    ids[locales_count] = NULL;
+
+    return ids;
+}
+
+int find_locale_index(const char *search) {
+    get_locales_count();
+
+    const char **ids = get_ids();
+    if (!ids) return -1;
+
+    for (size_t i = 0; i < locales_count; i++) {
+        if (strstr(ids[i], search)) {
+            free(ids);
+            return i;
+        }
+    }
+
+    free(ids);
+    return -1;
+}
+
+int get_current_system_locale_index(const char *alternative) {
     get_locales_count();
 
     const char *system_locale = setlocale(LC_ALL, NULL);
@@ -208,5 +239,5 @@ int get_current_system_locale_index() {
         }
     }
 
-    return -1;
+    return find_locale_index(alternative);
 }

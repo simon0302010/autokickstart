@@ -7,6 +7,7 @@
 
 #include "cJSON/cJSON.h"
 #include "glib-object.h"
+#include "glib.h"
 #include "utils/utils.h"
 
 struct KickstartOptions {
@@ -28,7 +29,7 @@ struct KickstartOptions options;
 static void build_iso() {
     const char *username = gtk_editable_get_text(GTK_EDITABLE(options.username));
     const char *password = gtk_editable_get_text(GTK_EDITABLE(options.password));
-    g_print("Username:%s, Password: %s", username, password);
+    g_print("Username:%s, Password: %s\n", username, password);
 }
 
 static int load_file(const char *path) {
@@ -93,11 +94,45 @@ static int save_file(const char *path) {
     return 0;
 }
 
+static void on_cfg_save_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+    GFile *file = gtk_file_dialog_save_finish(GTK_FILE_DIALOG(source_object), res, NULL);
+
+    if (file != NULL) {
+        char *file_path = g_file_get_path(file);
+        g_print("Saving configuration file to: %s\n", file_path);
+        
+        if (save_file(file_path) != 0) {
+            g_free(file_path);
+            show_alert(window, "Failed to load file");
+        } else {
+            if (options.path) {
+                g_free(options.path);
+            }
+            options.path = file_path;
+        }
+        g_object_unref(file);
+    }
+}
+
 static void on_save_file() {
     if (options.path) {
         if (save_file(options.path) != 0) {
             show_alert(window, "Failed to save file");
         }
+    } else {
+        GtkFileDialog *dialog = gtk_file_dialog_new();
+        gtk_file_dialog_set_title(dialog, "Select Configuration File");
+        gtk_file_dialog_set_initial_name(dialog, "config.json");
+        GtkFileFilter *filter = gtk_file_filter_new();
+        gtk_file_filter_add_suffix(filter, "json");
+        gtk_file_filter_set_name(filter, "JSON files");
+        GListModel *filters = G_LIST_MODEL(g_list_store_new(GTK_TYPE_FILE_FILTER));
+        g_list_store_append(G_LIST_STORE(filters), filter);
+        gtk_file_dialog_set_filters(dialog, filters);
+        g_object_unref(filter);
+        g_object_unref(filters);
+        gtk_file_dialog_save(dialog, GTK_WINDOW(window), NULL, on_cfg_save_finish, NULL);
+        g_object_unref(dialog);
     }
 }
 
@@ -106,7 +141,7 @@ static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpoint
 
     if (file != NULL) {
         char *file_path = g_file_get_path(file);
-        g_print("Loading configuration file from: %s", file_path);
+        g_print("Loading configuration file from: %s\n", file_path);
         
         if (load_file(file_path) != 0) {
             g_free(file_path);
@@ -122,8 +157,16 @@ static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpoint
 }
 
 static void open_file_dialog(GtkWidget *window) {
-    GtkFileDialog *dialog;
-    dialog = gtk_file_dialog_new();
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(dialog, "Select Configuration File");
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_add_suffix(filter, "json");
+    gtk_file_filter_set_name(filter, "JSON files");
+    GListModel *filters = G_LIST_MODEL(g_list_store_new(GTK_TYPE_FILE_FILTER));
+    g_list_store_append(G_LIST_STORE(filters), filter);
+    gtk_file_dialog_set_filters(dialog, filters);
+    g_object_unref(filter);
+    g_object_unref(filters);
     gtk_file_dialog_open(dialog, GTK_WINDOW(window), NULL, on_cfg_open_finish, NULL);
     g_object_unref(dialog);
 }

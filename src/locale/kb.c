@@ -105,6 +105,7 @@ struct Layout layouts[] = {
     { "Uzbek", "uz" },
     { "Vietnamese", "vn" },
     { "Wolof", "sn" },
+    { NULL, NULL }
 };
 
 size_t layout_count = 0;

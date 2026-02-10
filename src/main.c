@@ -47,13 +47,14 @@ static int load_file(const char *path) {
     long length = ftell(f);
     fseek(f, 0, SEEK_SET);
     
-    buffer = malloc(length);
+    buffer = malloc(length + 1);
     if (!buffer) {
         fclose(f);
         return 1;
     }
     
     fread(buffer, 1, length, f);
+    buffer[length] = '\0';
     fclose(f);
     
     cJSON *root = cJSON_Parse(buffer);
@@ -361,7 +362,7 @@ int main(int argc, char **argv) {
     if (ks_file.file != NULL) {
         fclose(ks_file.file);
     }
-    g_free(ks_file.path);
+    free(ks_file.path);
     
     if (options.path != NULL) {
         g_free(options.path);

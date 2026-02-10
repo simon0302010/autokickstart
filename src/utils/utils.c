@@ -1,3 +1,4 @@
+#include "glib-object.h"
 #include "gtk/gtk.h"
 #include "gtk/gtkshortcut.h"
 #include <stdio.h>
@@ -37,4 +38,5 @@ void show_alert(GtkWidget *window, const char* msg) {
     GtkAlertDialog *dialog = gtk_alert_dialog_new("%s", msg);
     gtk_alert_dialog_set_buttons(dialog, (const char *[]) { "Ok", NULL });
     gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
+    g_object_unref(dialog);
 }

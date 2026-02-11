@@ -18,10 +18,10 @@ struct OpenedFile {
     FILE *file;
 };
 
-GtkWidget *window;
-GtkWidget *label;
+extern GtkWidget *window;
+extern GtkWidget *label;
 
-struct OpenedFile ks_file;
-struct KickstartOptions options;
+extern struct OpenedFile ks_file;
+extern struct KickstartOptions options;
 
 #endif

@@ -12,6 +12,11 @@
 #include <kickstart/kickstart.h>
 #include "globals.h"
 
+GtkWidget *window;
+GtkWidget *label;
+struct OpenedFile ks_file;
+struct KickstartOptions options;
+
 static void build_iso() {
     printf("Coming soon");
 }

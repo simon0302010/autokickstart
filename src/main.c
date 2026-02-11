@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "cJSON/cJSON.h"
+#include "glib-object.h"
 #include "gtk/gtkdropdown.h"
 #include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
@@ -14,8 +15,8 @@
 
 struct KickstartOptions {
     char *path;
-    GtkWidget *password;
-    GtkWidget *username;
+    GtkWidget *root_enabled;
+    GtkWidget *root_password;
     GtkWidget *graphics_mode;
     GtkWidget *locale;
     GtkWidget *layout;
@@ -64,17 +65,17 @@ static int load_file(const char *path) {
         return 1;
     }
     
-    cJSON *username_item = cJSON_GetObjectItem(root, "username");
-    cJSON *password_item = cJSON_GetObjectItem(root, "password");
+    cJSON *root_enabled_item = cJSON_GetObjectItem(root, "root_enabled");
+    cJSON *root_password_item = cJSON_GetObjectItem(root, "root_password");
     cJSON *graphics_mode_item = cJSON_GetObjectItem(root, "graphics_mode");
     cJSON *locale_item = cJSON_GetObjectItem(root, "locale");
     cJSON *layout_item = cJSON_GetObjectItem(root, "keyboard");
     
-    if (username_item && username_item->valuestring) {
-        gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
+    if (root_enabled_item && root_enabled_item->valuestring) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
     }
-    if (password_item && password_item->valuestring) {
-        gtk_editable_set_text(GTK_EDITABLE(options.password), password_item->valuestring);
+    if (root_password_item && root_password_item->valuestring) {
+        gtk_editable_set_text(GTK_EDITABLE(options.root_password), root_password_item->valuestring);
     }
     if (graphics_mode_item && graphics_mode_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.graphics_mode), graphics_mode_item->valueint);
@@ -93,8 +94,8 @@ static int load_file(const char *path) {
 static int save_file(const char *path) {
     cJSON *root = cJSON_CreateObject();
 
-    cJSON_AddStringToObject(root, "username", gtk_editable_get_text(GTK_EDITABLE(options.username)));
-    cJSON_AddStringToObject(root, "password", gtk_editable_get_text(GTK_EDITABLE(options.password)));
+    cJSON_AddBoolToObject(root, "root_enabled", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled)));
+    cJSON_AddStringToObject(root, "root_password", gtk_editable_get_text(GTK_EDITABLE(options.root_password)));
     cJSON_AddNumberToObject(root, "graphics_mode", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.graphics_mode)));
     cJSON_AddNumberToObject(root, "locale", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.locale)));
     cJSON_AddNumberToObject(root, "keyboard", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.layout)));
@@ -216,6 +217,10 @@ static GtkWidget *create_label(const char *text) {
     return label;
 }
 
+static void toogle_root_password_entry() {
+    gtk_widget_set_sensitive(options.root_password, gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled)));
+}
+
 static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *main_box;
     GtkWidget *scrolled_window;
@@ -248,21 +253,23 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_grid_set_column_spacing(GTK_GRID(form_grid), 10);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), form_grid);
 
-    // input
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Username:"), 0, 0, 1, 1);
+    // root enabled checkbox
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Root User Enabled:"), 0, 0, 1, 1);
 
-    GtkWidget *username_entry = gtk_entry_new();
-    gtk_widget_set_hexpand(username_entry, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), username_entry, 1, 0, 1, 1);
-    options.username = username_entry;
+    GtkWidget *root_enabled = gtk_check_button_new();
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(root_enabled), TRUE);
+    g_signal_connect_swapped(root_enabled, "toggled", G_CALLBACK(toogle_root_password_entry), NULL);
+    gtk_grid_attach(GTK_GRID(form_grid), root_enabled, 1, 0, 1, 1);
+    options.root_enabled = root_enabled;
 
-    // input 2
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Password:"), 0, 1, 1, 1);
+    // root password entry
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Root Password:"), 0, 1, 1, 1);
 
-    GtkWidget *password_entry = gtk_entry_new();
-    gtk_widget_set_hexpand(password_entry, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), password_entry, 1, 1, 1, 1);
-    options.password = password_entry;
+    GtkWidget *root_password = gtk_password_entry_new();
+    gtk_widget_set_hexpand(root_password, TRUE);
+    gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(root_password), TRUE);
+    gtk_grid_attach(GTK_GRID(form_grid), root_password, 1, 1, 1, 1);
+    options.root_password = root_password;
 
     // graphics mode dropdown
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Mode:"), 0, 2, 1, 1);

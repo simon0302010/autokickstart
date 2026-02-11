@@ -19,6 +19,7 @@ struct KickstartOptions {
     GtkWidget *graphics_mode;
     GtkWidget *locale;
     GtkWidget *layout;
+    GtkWidget *selinux;
 };
 
 struct OpenedFile {
@@ -69,6 +70,7 @@ static int load_file(const char *path) {
     cJSON *graphics_mode_item = cJSON_GetObjectItem(root, "graphics_mode");
     cJSON *locale_item = cJSON_GetObjectItem(root, "locale");
     cJSON *layout_item = cJSON_GetObjectItem(root, "keyboard");
+    cJSON *selinux_item = cJSON_GetObjectItem(root, "selinux");
     
     if (username_item && username_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.username), username_item->valuestring);
@@ -85,6 +87,9 @@ static int load_file(const char *path) {
     if (layout_item && layout_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.layout), layout_item->valueint);
     }
+    if (selinux_item && selinux_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.selinux), selinux_item->valueint);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -98,6 +103,7 @@ static int save_file(const char *path) {
     cJSON_AddNumberToObject(root, "graphics_mode", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.graphics_mode)));
     cJSON_AddNumberToObject(root, "locale", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.locale)));
     cJSON_AddNumberToObject(root, "keyboard", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.layout)));
+    cJSON_AddNumberToObject(root, "selinux", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.selinux)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
@@ -298,6 +304,16 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_drop_down_set_selected(GTK_DROP_DOWN(layout_chooser), find_current_system_layout_index("us"));
     gtk_grid_attach(GTK_GRID(form_grid), layout_chooser, 1, 4, 1, 1);
     options.layout = layout_chooser;
+
+    // selinux dropdown
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("SELinux:"), 0, 5, 1, 1);
+
+    const char *selinux_options[] = {"Disabled", "Permissive", "Enforcing", NULL};
+    GtkWidget *selinux_chooser = gtk_drop_down_new_from_strings(selinux_options);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(selinux_chooser), 2);
+    gtk_widget_set_hexpand(selinux_chooser, TRUE);
+    gtk_grid_attach(GTK_GRID(form_grid), selinux_chooser, 1, 5, 1, 1);
+    options.selinux = selinux_chooser;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

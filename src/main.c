@@ -218,7 +218,11 @@ static GtkWidget *create_label(const char *text) {
 }
 
 static void toogle_root_password_entry() {
-    gtk_widget_set_sensitive(options.root_password, gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled)));
+    bool using_root_pw = gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled));
+    gtk_widget_set_sensitive(options.root_password, using_root_pw);
+    if (!using_root_pw) {
+        gtk_editable_set_text(GTK_EDITABLE(options.root_password), "");
+    }
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {

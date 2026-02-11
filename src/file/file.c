@@ -1,0 +1,166 @@
+#include <stdio.h>
+#include <gtk/gtk.h>
+
+#include "../cJSON/cJSON.h"
+#include "../globals.h"
+#include "../utils/utils.h"
+
+int load_file(const char *path) {
+    char *buffer = NULL;
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        return 2;
+    }
+
+    fseek(f, 0, SEEK_END);
+    long length = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    
+    buffer = malloc(length + 1);
+    if (!buffer) {
+        fclose(f);
+        return 1;
+    }
+    
+    fread(buffer, 1, length, f);
+    buffer[length] = '\0';
+    fclose(f);
+    
+    cJSON *root = cJSON_Parse(buffer);
+    free(buffer);
+    
+    if (!root) {
+        return 1;
+    }
+    
+    cJSON *root_enabled_item = cJSON_GetObjectItem(root, "root_enabled");
+    cJSON *root_password_item = cJSON_GetObjectItem(root, "root_password");
+    cJSON *graphics_mode_item = cJSON_GetObjectItem(root, "graphics_mode");
+    cJSON *locale_item = cJSON_GetObjectItem(root, "locale");
+    cJSON *layout_item = cJSON_GetObjectItem(root, "keyboard");
+    cJSON *selinux_item = cJSON_GetObjectItem(root, "selinux");
+    
+    if (root_enabled_item && root_enabled_item->valuestring) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
+    }
+    if (root_password_item && root_password_item->valuestring) {
+        gtk_editable_set_text(GTK_EDITABLE(options.root_password), root_password_item->valuestring);
+    }
+    if (graphics_mode_item && graphics_mode_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.graphics_mode), graphics_mode_item->valueint);
+    }
+    if (locale_item && locale_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.locale), locale_item->valueint);
+    }
+    if (layout_item && layout_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.layout), layout_item->valueint);
+    }
+    if (selinux_item && selinux_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.selinux), selinux_item->valueint);
+    }
+
+    cJSON_Delete(root);
+    return 0;
+}
+
+int save_file(const char *path) {
+    cJSON *root = cJSON_CreateObject();
+
+    cJSON_AddBoolToObject(root, "root_enabled", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled)));
+    cJSON_AddStringToObject(root, "root_password", gtk_editable_get_text(GTK_EDITABLE(options.root_password)));
+    cJSON_AddNumberToObject(root, "graphics_mode", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.graphics_mode)));
+    cJSON_AddNumberToObject(root, "locale", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.locale)));
+    cJSON_AddNumberToObject(root, "keyboard", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.layout)));
+    cJSON_AddNumberToObject(root, "selinux", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.selinux)));
+
+    char *json_str = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    FILE *f = fopen(path, "w");
+    if (!f) {
+        free(json_str);
+        return 1;
+    }
+
+    fputs(json_str, f);
+    fclose(f);
+    free(json_str);
+    return 0;
+}
+
+static void on_cfg_save_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+    GFile *file = gtk_file_dialog_save_finish(GTK_FILE_DIALOG(source_object), res, NULL);
+
+    if (file != NULL) {
+        char *file_path = g_file_get_path(file);
+        g_print("Saving configuration file to: %s\n", file_path);
+        
+        if (save_file(file_path) != 0) {
+            g_free(file_path);
+            show_alert(window, "Failed to load file");
+        } else {
+            if (options.path) {
+                g_free(options.path);
+            }
+            options.path = file_path;
+        }
+        g_object_unref(file);
+    }
+}
+
+void on_save_file() {
+    if (options.path) {
+        if (save_file(options.path) != 0) {
+            show_alert(window, "Failed to save file");
+        }
+    } else {
+        GtkFileDialog *dialog = gtk_file_dialog_new();
+        gtk_file_dialog_set_title(dialog, "Select Configuration File");
+        gtk_file_dialog_set_initial_name(dialog, "config.json");
+        GtkFileFilter *filter = gtk_file_filter_new();
+        gtk_file_filter_add_suffix(filter, "json");
+        gtk_file_filter_set_name(filter, "JSON files");
+        GListModel *filters = G_LIST_MODEL(g_list_store_new(GTK_TYPE_FILE_FILTER));
+        g_list_store_append(G_LIST_STORE(filters), filter);
+        gtk_file_dialog_set_filters(dialog, filters);
+        g_object_unref(filter);
+        g_object_unref(filters);
+        gtk_file_dialog_save(dialog, GTK_WINDOW(window), NULL, on_cfg_save_finish, NULL);
+        g_object_unref(dialog);
+    }
+}
+
+static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+    GFile *file = gtk_file_dialog_open_finish(GTK_FILE_DIALOG(source_object), res, NULL);
+
+    if (file != NULL) {
+        char *file_path = g_file_get_path(file);
+        g_print("Loading configuration file from: %s\n", file_path);
+        
+        if (load_file(file_path) != 0) {
+            g_free(file_path);
+            show_alert(window, "Failed to load file");
+        } else {
+            if (options.path != NULL) {
+                g_free(options.path);
+            }
+            options.path = file_path;
+        }
+        g_object_unref(file);
+    }
+}
+
+void open_file_dialog(GtkWidget *window) {
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(dialog, "Select Configuration File");
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_add_suffix(filter, "json");
+    gtk_file_filter_set_name(filter, "JSON files");
+    GListModel *filters = G_LIST_MODEL(g_list_store_new(GTK_TYPE_FILE_FILTER));
+    g_list_store_append(G_LIST_STORE(filters), filter);
+    gtk_file_dialog_set_filters(dialog, filters);
+    g_object_unref(filter);
+    g_object_unref(filters);
+    gtk_file_dialog_open(dialog, GTK_WINDOW(window), NULL, on_cfg_open_finish, NULL);
+    g_object_unref(dialog);
+}

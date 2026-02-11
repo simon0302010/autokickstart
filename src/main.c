@@ -263,35 +263,43 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_grid_set_column_spacing(GTK_GRID(form_grid), 10);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), form_grid);
 
-    // root enabled checkbox
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Root User Enabled:"), 0, 0, 1, 1);
+    // root user
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Root User:"), 0, 0, 1, 1);
 
-    GtkWidget *root_enabled = gtk_check_button_new();
+    GtkWidget *root_user_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_grid_attach(GTK_GRID(form_grid), root_user_box, 1, 0, 1, 1);
+
+    // root enabled checkbox
+    GtkWidget *root_enabled = gtk_check_button_new_with_label("Enabled");
     gtk_check_button_set_active(GTK_CHECK_BUTTON(root_enabled), TRUE);
     g_signal_connect_swapped(root_enabled, "toggled", G_CALLBACK(toogle_root_password_entry), NULL);
-    gtk_grid_attach(GTK_GRID(form_grid), root_enabled, 1, 0, 1, 1);
+    //gtk_grid_attach(GTK_GRID(form_grid), root_enabled, 1, 0, 1, 1);
+    gtk_box_append(GTK_BOX(root_user_box), root_enabled);
     options.root_enabled = root_enabled;
 
     // root password entry
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Root Password:"), 0, 1, 1, 1);
-
+    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_size_request(spacer, 20, -1);
+    gtk_box_append(GTK_BOX(root_user_box), spacer);
+    gtk_box_append(GTK_BOX(root_user_box), create_label("Password:"));
     GtkWidget *root_password = gtk_password_entry_new();
     gtk_widget_set_hexpand(root_password, TRUE);
     gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(root_password), TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), root_password, 1, 1, 1, 1);
+    //gtk_grid_attach(GTK_GRID(form_grid), root_password, 1, 1, 1, 1);
+    gtk_box_append(GTK_BOX(root_user_box), root_password);
     options.root_password = root_password;
 
     // graphics mode dropdown
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Mode:"), 0, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Mode:"), 0, 1, 1, 1);
 
     const char *graphics_modes_array[] = {"Graphical", "Text", NULL};
     GtkWidget *graphics_mode = gtk_drop_down_new_from_strings(graphics_modes_array);
     gtk_widget_set_hexpand(graphics_mode, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), graphics_mode, 1, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), graphics_mode, 1, 1, 1, 1);
     options.graphics_mode = graphics_mode;
 
     // locale dropdown
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("System Locale:"), 0, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("System Locale:"), 0, 2, 1, 1);
 
     const char **locale_names = get_locale_names();
     GtkWidget *locale_chooser = gtk_drop_down_new_from_strings(locale_names);
@@ -300,11 +308,11 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_drop_down_set_enable_search(GTK_DROP_DOWN(locale_chooser), TRUE);
     gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(locale_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(locale_chooser), get_current_system_locale_index("en_US"));
-    gtk_grid_attach(GTK_GRID(form_grid), locale_chooser, 1, 3, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), locale_chooser, 1, 2, 1, 1);
     options.locale = locale_chooser;
 
     // layout dropdown
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Keyboard Layout:"), 0, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Keyboard Layout:"), 0, 3, 1, 1);
 
     const char **layout_names = get_layout_names();
     GtkWidget *layout_chooser = gtk_drop_down_new_from_strings(layout_names);
@@ -313,17 +321,17 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_drop_down_set_enable_search(GTK_DROP_DOWN(layout_chooser), TRUE);
     gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(layout_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(layout_chooser), find_current_system_layout_index("us"));
-    gtk_grid_attach(GTK_GRID(form_grid), layout_chooser, 1, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), layout_chooser, 1, 3, 1, 1);
     options.layout = layout_chooser;
 
     // selinux dropdown
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("SELinux:"), 0, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("SELinux:"), 0, 4, 1, 1);
 
     const char *selinux_options[] = {"Disabled", "Permissive", "Enforcing", NULL};
     GtkWidget *selinux_chooser = gtk_drop_down_new_from_strings(selinux_options);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(selinux_chooser), 2);
     gtk_widget_set_hexpand(selinux_chooser, TRUE);
-    gtk_grid_attach(GTK_GRID(form_grid), selinux_chooser, 1, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), selinux_chooser, 1, 4, 1, 1);
     options.selinux = selinux_chooser;
 
     // button box at bottom

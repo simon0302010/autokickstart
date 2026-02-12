@@ -5,12 +5,11 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
-#include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
 #include "file/file.h"
-#include <kickstart/kickstart.h>
+#include "kickstart/kickstart.h"
 #include "globals.h"
 
 GtkWidget *window;
@@ -19,7 +18,7 @@ struct OpenedFile ks_file;
 struct KickstartOptions options;
 
 static void build_iso() {
-    printf("Coming soon");
+    g_print("Coming soon\n");
 }
 
 static bool is_fedora() {
@@ -115,7 +114,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     options.root_password = root_password;
 
     // graphics mode dropdown
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Mode:"), 0, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Installation Mode:"), 0, 1, 1, 1);
 
     const char *graphics_modes_array[] = {"Graphical", "Text", NULL};
     GtkWidget *graphics_mode = gtk_drop_down_new_from_strings(graphics_modes_array);

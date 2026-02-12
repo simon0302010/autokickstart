@@ -1,9 +1,10 @@
 {
-	"root_enabled":	true,
+	"root_enabled":	false,
 	"root_password":	"",
-	"graphics_mode":	0,
-	"locale":	64,
-	"keyboard":	41,
-	"selinux":	2,
-	"clearpart":	"linux"
+	"graphics_mode":	1,
+	"locale":	2,
+	"keyboard":	6,
+	"selinux":	1,
+	"clearpart":	"linux",
+	"autopart":	true
 }

@@ -61,6 +61,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *form_grid;
     GtkWidget *button_box;
 
+    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_size_request(spacer, 20, -1);
+
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Auto Kickstart");
     gtk_window_set_default_size(GTK_WINDOW(window), 400, 500);
@@ -102,8 +105,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
     options.root_enabled = root_enabled;
 
     // root password entry
-    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_widget_set_size_request(spacer, 20, -1);
     gtk_box_append(GTK_BOX(root_user_box), spacer);
     gtk_box_append(GTK_BOX(root_user_box), create_label("Password:"));
     GtkWidget *root_password = gtk_password_entry_new();
@@ -180,6 +181,16 @@ static void activate(GtkApplication *app, gpointer user_data) {
     options.clearpart_all = clearpart_all;
     options.clearpart_linux = clearpart_linux;
     options.clearpart_none = clearpart_none;
+
+    // autopart option
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Partitioning:"), 0, 6, 1, 1);
+
+    GtkWidget *autopart = gtk_check_button_new_with_label("Automatic");
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(autopart), TRUE);
+    gtk_widget_set_sensitive(GTK_WIDGET(autopart), FALSE);
+    gtk_grid_attach(GTK_GRID(form_grid), autopart, 1, 6, 1, 1);
+
+    options.autopart = autopart;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

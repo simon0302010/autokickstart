@@ -14,6 +14,7 @@ struct KickstartOptions {
     GtkWidget *clearpart_all;
     GtkWidget *clearpart_linux;
     GtkWidget *clearpart_none;
+    GtkWidget *autopart;
 };
 
 struct OpenedFile {

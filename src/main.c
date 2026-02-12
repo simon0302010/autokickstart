@@ -99,7 +99,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *root_enabled = gtk_check_button_new_with_label("Enabled");
     gtk_check_button_set_active(GTK_CHECK_BUTTON(root_enabled), TRUE);
     g_signal_connect_swapped(root_enabled, "toggled", G_CALLBACK(toogle_root_password_entry), NULL);
-    //gtk_grid_attach(GTK_GRID(form_grid), root_enabled, 1, 0, 1, 1);
+    gtk_widget_set_tooltip_text(root_enabled, "If this option is disabled, the root account is locked. This means that the root user will not be able to log in from the console.");
     gtk_box_append(GTK_BOX(root_user_box), root_enabled);
     options.root_enabled = root_enabled;
 
@@ -109,7 +109,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *root_password = gtk_password_entry_new();
     gtk_widget_set_hexpand(root_password, TRUE);
     gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(root_password), TRUE);
-    //gtk_grid_attach(GTK_GRID(form_grid), root_password, 1, 1, 1, 1);
+    gtk_widget_set_tooltip_text(root_password, "Sets the system’s root password.");
     gtk_box_append(GTK_BOX(root_user_box), root_password);
     options.root_password = root_password;
 
@@ -119,6 +119,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     const char *graphics_modes_array[] = {"Graphical", "Text", NULL};
     GtkWidget *graphics_mode = gtk_drop_down_new_from_strings(graphics_modes_array);
     gtk_widget_set_hexpand(graphics_mode, TRUE);
+    gtk_widget_set_tooltip_text(graphics_mode, "Select the mode the installer will run in");
     gtk_grid_attach(GTK_GRID(form_grid), graphics_mode, 1, 1, 1, 1);
     options.graphics_mode = graphics_mode;
 
@@ -132,6 +133,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_drop_down_set_enable_search(GTK_DROP_DOWN(locale_chooser), TRUE);
     gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(locale_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(locale_chooser), get_current_system_locale_index("en_US"));
+    gtk_widget_set_tooltip_text(locale_chooser, "Sets the language to use during installation and the default language to use on the installed system.");
     gtk_grid_attach(GTK_GRID(form_grid), locale_chooser, 1, 2, 1, 1);
     options.locale = locale_chooser;
 
@@ -145,6 +147,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_drop_down_set_enable_search(GTK_DROP_DOWN(layout_chooser), TRUE);
     gtk_drop_down_set_search_match_mode(GTK_DROP_DOWN(layout_chooser), GTK_STRING_FILTER_MATCH_MODE_SUBSTRING);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(layout_chooser), find_current_system_layout_index("us"));
+    gtk_widget_set_tooltip_text(layout_chooser, "Sets the keyboard layout to be used on the installed system.");
     gtk_grid_attach(GTK_GRID(form_grid), layout_chooser, 1, 3, 1, 1);
     options.layout = layout_chooser;
 
@@ -155,6 +158,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *selinux_chooser = gtk_drop_down_new_from_strings(selinux_options);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(selinux_chooser), 2);
     gtk_widget_set_hexpand(selinux_chooser, TRUE);
+    gtk_widget_set_tooltip_text(selinux_chooser, "Sets the state of SELinux on the installed system.");
     gtk_grid_attach(GTK_GRID(form_grid), selinux_chooser, 1, 4, 1, 1);
     options.selinux = selinux_chooser;
 
@@ -169,6 +173,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_check_button_set_group(GTK_CHECK_BUTTON(clearpart_none), GTK_CHECK_BUTTON(clearpart_all));
     
     gtk_check_button_set_active(GTK_CHECK_BUTTON(clearpart_none), TRUE);
+
+    gtk_widget_set_tooltip_text(clearpart_all, "Erases all partitions from the system. This option will erase all disks which can be reached by the installer, including any attached network storage. Use this option with caution.");
+    gtk_widget_set_tooltip_text(clearpart_linux, "Erases all Linux partitions.");
+    gtk_widget_set_tooltip_text(clearpart_none, "Do not remove any partitions.");
 
     GtkWidget *clearpart_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_box_append(GTK_BOX(clearpart_box), clearpart_all);
@@ -199,6 +207,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *open_btn = gtk_button_new_with_label("Open File");
     GtkWidget *save_btn = gtk_button_new_with_label("Save File");
     GtkWidget *build_btn = gtk_button_new_with_label("Build ISO");
+
+    gtk_widget_set_tooltip_text(open_btn, "Open an autokickstart configuration file");
+    gtk_widget_set_tooltip_text(save_btn, "Saves the current configuration to a file");
+    gtk_widget_set_tooltip_text(build_btn, "Builds an ISO image with the current configuration");
 
     g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file_dialog), window);
     g_signal_connect_swapped(save_btn, "clicked", G_CALLBACK(on_save_file), NULL);

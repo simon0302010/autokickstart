@@ -39,6 +39,7 @@ int load_file(const char *path) {
     cJSON *locale_item = cJSON_GetObjectItem(root, "locale");
     cJSON *layout_item = cJSON_GetObjectItem(root, "keyboard");
     cJSON *selinux_item = cJSON_GetObjectItem(root, "selinux");
+    cJSON *clearpart_item = cJSON_GetObjectItem(root, "clearpart");
     
     if (root_enabled_item && root_enabled_item->valuestring) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
@@ -58,6 +59,9 @@ int load_file(const char *path) {
     if (selinux_item && selinux_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.selinux), selinux_item->valueint);
     }
+    if (clearpart_item && clearpart_item->valuestring) {
+        set_selected_clearpart(clearpart_item->valuestring);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -66,12 +70,16 @@ int load_file(const char *path) {
 int save_file(const char *path) {
     cJSON *root = cJSON_CreateObject();
 
+    char clearpart[6];
+    get_selected_clearpart(clearpart);
+
     cJSON_AddBoolToObject(root, "root_enabled", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled)));
     cJSON_AddStringToObject(root, "root_password", gtk_editable_get_text(GTK_EDITABLE(options.root_password)));
     cJSON_AddNumberToObject(root, "graphics_mode", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.graphics_mode)));
     cJSON_AddNumberToObject(root, "locale", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.locale)));
     cJSON_AddNumberToObject(root, "keyboard", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.layout)));
     cJSON_AddNumberToObject(root, "selinux", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.selinux)));
+    cJSON_AddStringToObject(root, "clearpart", clearpart);
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

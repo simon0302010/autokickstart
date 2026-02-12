@@ -5,6 +5,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
+#include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -156,6 +157,29 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_hexpand(selinux_chooser, TRUE);
     gtk_grid_attach(GTK_GRID(form_grid), selinux_chooser, 1, 4, 1, 1);
     options.selinux = selinux_chooser;
+
+    // clearpart
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Delete Partitions:"), 0, 5, 1, 1);
+
+    GtkWidget *clearpart_all = gtk_check_button_new_with_label("All");
+    GtkWidget *clearpart_linux = gtk_check_button_new_with_label("Linux");
+    GtkWidget *clearpart_none = gtk_check_button_new_with_label("None");
+    
+    gtk_check_button_set_group(GTK_CHECK_BUTTON(clearpart_linux), GTK_CHECK_BUTTON(clearpart_all));
+    gtk_check_button_set_group(GTK_CHECK_BUTTON(clearpart_none), GTK_CHECK_BUTTON(clearpart_all));
+    
+    gtk_check_button_set_active(GTK_CHECK_BUTTON(clearpart_none), TRUE);
+
+    GtkWidget *clearpart_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(clearpart_box), clearpart_all);
+    gtk_box_append(GTK_BOX(clearpart_box), clearpart_linux);
+    gtk_box_append(GTK_BOX(clearpart_box), clearpart_none);
+
+    gtk_grid_attach(GTK_GRID(form_grid), clearpart_box, 1, 5, 1, 1);
+
+    options.clearpart_all = clearpart_all;
+    options.clearpart_linux = clearpart_linux;
+    options.clearpart_none = clearpart_none;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

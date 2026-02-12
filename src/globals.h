@@ -11,6 +11,9 @@ struct KickstartOptions {
     GtkWidget *locale;
     GtkWidget *layout;
     GtkWidget *selinux;
+    GtkWidget *clearpart_all;
+    GtkWidget *clearpart_linux;
+    GtkWidget *clearpart_none;
 };
 
 struct OpenedFile {

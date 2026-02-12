@@ -1,7 +1,9 @@
 {
 	"root_enabled":	true,
-	"root_password":	"test",
-	"graphics_mode":	1,
-	"locale":	2,
-	"keyboard":	6
+	"root_password":	"",
+	"graphics_mode":	0,
+	"locale":	64,
+	"keyboard":	41,
+	"selinux":	2,
+	"clearpart":	"linux"
 }

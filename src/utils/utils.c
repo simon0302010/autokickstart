@@ -1,8 +1,10 @@
 #include "glib-object.h"
+#include "globals.h"
 #include "gtk/gtk.h"
 #include "gtk/gtkshortcut.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -39,4 +41,28 @@ void show_alert(GtkWidget *window, const char* msg) {
     gtk_alert_dialog_set_buttons(dialog, (const char *[]) { "Ok", NULL });
     gtk_alert_dialog_show(dialog, GTK_WINDOW(window));
     g_object_unref(dialog);
+}
+
+void get_selected_clearpart(char *dest) {
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.clearpart_all))) {
+        strcpy(dest, "all");
+    } else if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.clearpart_linux))) {
+        strcpy(dest, "linux");
+    } else {
+        strcpy(dest, "none");
+    }
+}
+
+int set_selected_clearpart(const char *option) {
+    if (strcmp(option, "all") == 0) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.clearpart_all), TRUE);
+        return 1;
+    } else if (strcmp(option, "linux") == 0) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.clearpart_linux), TRUE);
+        return 1;
+    } else if (strcmp(option, "none") == 0) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.clearpart_none), TRUE);
+        return 1;
+    }
+    return 0;
 }

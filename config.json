@@ -1,10 +1,13 @@
 {
-	"root_enabled":	false,
+	"root_enabled":	true,
 	"root_password":	"",
 	"graphics_mode":	1,
 	"locale":	2,
 	"keyboard":	6,
 	"selinux":	1,
 	"clearpart":	"linux",
-	"autopart":	true
+	"autopart":	true,
+	"bootloader_options":	"test",
+	"bootloader_location":	0,
+	"initial_setup":	true
 }

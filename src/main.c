@@ -229,6 +229,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *enable_initial_setup = gtk_check_button_new_with_label("Enabled");
     gtk_grid_attach(GTK_GRID(form_grid), enable_initial_setup, 1, 8, 1, 1);
 
+    options.initial_setup = enable_initial_setup;
+
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_set_halign(button_box, GTK_ALIGN_CENTER);

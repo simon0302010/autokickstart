@@ -44,6 +44,7 @@ int load_file(const char *path) {
     cJSON *autopart_item = cJSON_GetObjectItem(root, "autopart");
     cJSON *bootloader_location_item = cJSON_GetObjectItem(root, "bootloader_location");
     cJSON *bootloader_options_item = cJSON_GetObjectItem(root, "bootloader_options");
+    cJSON *initial_setup_item = cJSON_GetObjectItem(root, "initial_setup");
     
     if (root_enabled_item && root_enabled_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
@@ -75,6 +76,9 @@ int load_file(const char *path) {
     if (bootloader_options_item && bootloader_options_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.bootloader_options), bootloader_options_item->valuestring);
     }
+    if (initial_setup_item && initial_setup_item->valueint) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.initial_setup), initial_setup_item->valueint);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -96,6 +100,7 @@ int save_file(const char *path) {
     cJSON_AddBoolToObject(root, "autopart", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.autopart)));
     cJSON_AddStringToObject(root, "bootloader_options", gtk_editable_get_text(GTK_EDITABLE(options.bootloader_options)));
     cJSON_AddNumberToObject(root, "bootloader_location", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.bootloader_location)));
+    cJSON_AddBoolToObject(root, "initial_setup", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.initial_setup)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

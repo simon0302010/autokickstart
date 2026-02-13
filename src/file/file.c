@@ -4,6 +4,7 @@
 #include "../cJSON/cJSON.h"
 #include "../globals.h"
 #include "../utils/utils.h"
+#include "gtk/gtkdropdown.h"
 
 int load_file(const char *path) {
     char *buffer = NULL;
@@ -41,6 +42,8 @@ int load_file(const char *path) {
     cJSON *selinux_item = cJSON_GetObjectItem(root, "selinux");
     cJSON *clearpart_item = cJSON_GetObjectItem(root, "clearpart");
     cJSON *autopart_item = cJSON_GetObjectItem(root, "autopart");
+    cJSON *bootloader_location_item = cJSON_GetObjectItem(root, "bootloader_location");
+    cJSON *bootloader_options_item = cJSON_GetObjectItem(root, "bootloader_options");
     
     if (root_enabled_item && root_enabled_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
@@ -66,6 +69,12 @@ int load_file(const char *path) {
     if (autopart_item && autopart_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.autopart), autopart_item->valueint);
     }
+    if (bootloader_location_item && bootloader_location_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.bootloader_location), bootloader_location_item->valueint);
+    }
+    if (bootloader_options_item && bootloader_options_item->valuestring) {
+        gtk_editable_set_text(GTK_EDITABLE(options.bootloader_options), bootloader_options_item->valuestring);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -85,6 +94,8 @@ int save_file(const char *path) {
     cJSON_AddNumberToObject(root, "selinux", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.selinux)));
     cJSON_AddStringToObject(root, "clearpart", clearpart);
     cJSON_AddBoolToObject(root, "autopart", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.autopart)));
+    cJSON_AddStringToObject(root, "bootloader_options", gtk_editable_get_text(GTK_EDITABLE(options.bootloader_options)));
+    cJSON_AddNumberToObject(root, "bootloader_location", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.bootloader_location)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

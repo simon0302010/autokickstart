@@ -116,7 +116,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     // graphics mode dropdown
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Installation Mode:"), 0, 1, 1, 1);
 
-    const char *graphics_modes_array[] = {"Graphical", "Text", NULL};
+    const char *graphics_modes_array[] = {"Graphical", "Text", "Cmdline", NULL};
     GtkWidget *graphics_mode = gtk_drop_down_new_from_strings(graphics_modes_array);
     gtk_widget_set_hexpand(graphics_mode, TRUE);
     gtk_widget_set_tooltip_text(graphics_mode, "Select the mode the installer will run in");
@@ -198,6 +198,36 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_grid_attach(GTK_GRID(form_grid), autopart, 1, 6, 1, 1);
 
     options.autopart = autopart;
+
+    // bootloader
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Bootloader:"), 0, 7, 1, 1);
+
+    GtkWidget *bootloader_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    gtk_box_append(GTK_BOX(bootloader_box), create_label("Location:"));
+
+    const char *bootloader_locations[] = {"MBR", "Partition", "None", NULL};
+    GtkWidget *bootloader_location_dropdown = gtk_drop_down_new_from_strings(bootloader_locations);
+    gtk_widget_set_tooltip_text(bootloader_location_dropdown, "Specifies where the boot record is written. The None option does not install the GRUB bootloader.");
+    gtk_box_append(GTK_BOX(bootloader_box), bootloader_location_dropdown);
+
+    gtk_box_append(GTK_BOX(bootloader_box), create_label("Options:"));
+
+    GtkWidget *bootloader_options = gtk_entry_new();
+    gtk_widget_set_hexpand(bootloader_options, TRUE);
+    gtk_widget_set_tooltip_text(bootloader_options, "Specifies additional kernel parameters. To specify multiple parameters, separate them with spaces.");
+
+    gtk_box_append(GTK_BOX(bootloader_box), bootloader_options);
+
+    gtk_grid_attach(GTK_GRID(form_grid), bootloader_box, 1, 7, 1, 1);
+
+    options.bootloader_options = bootloader_options;
+    options.bootloader_location = bootloader_location_dropdown;
+
+    // initial setup
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Initial Setup:"), 0, 8, 1, 1);
+
+    GtkWidget *enable_initial_setup = gtk_check_button_new_with_label("Enabled");
+    gtk_grid_attach(GTK_GRID(form_grid), enable_initial_setup, 1, 8, 1, 1);
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

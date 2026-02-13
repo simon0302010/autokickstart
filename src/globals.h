@@ -15,6 +15,8 @@ struct KickstartOptions {
     GtkWidget *clearpart_linux;
     GtkWidget *clearpart_none;
     GtkWidget *autopart;
+    GtkWidget *bootloader_location;
+    GtkWidget *bootloader_options;
 };
 
 struct OpenedFile {

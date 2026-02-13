@@ -10,6 +10,17 @@ static const char *base_path = "/usr/share/zoneinfo/posix";
 static int count = 0;
 static char **timezones;
 
+void free_timezones() {
+    if (timezones) {
+        for (int i = 0; i < count; i++) {
+            free(timezones[i]);
+        }
+        free(timezones);
+        timezones = NULL;
+        count = 0;
+    }
+}
+
 static int callback(const char *fpath, const struct stat *sb, 
                    int typeflag, struct FTW *ftwbuf) {
     (void)sb;
@@ -34,22 +45,24 @@ static int callback(const char *fpath, const struct stat *sb,
 
 char **get_timezones(int *num_zones) {
     if (timezones) {
+        if (num_zones) *num_zones = count;
         return timezones;
     }
+
+    if (num_zones) *num_zones = 0;
 
     count = 0;
     timezones = malloc(MAX_ITEMS * sizeof(char *));
     if (!timezones) return NULL;
     
     if (nftw(base_path, callback, 20, FTW_PHYS) != 0) {
-        free(timezones);
-        timezones = NULL;
+        free_timezones();
         return NULL;
     }
 
     char **tmp = realloc(timezones, count * sizeof(char *));
     if (tmp) timezones = tmp;
-    
+
     if (num_zones) *num_zones = count;
     return timezones;
 }
@@ -77,17 +90,13 @@ const char *get_current_timezone() {
     return timezone_str;
 }
 
-int get_current_timezone_idx(const char *alternative) {
-    const char *tz = get_current_timezone();
-    if (tz) {
-        for (int i = 0; i < count; i++) {
-            if (strcmp(timezones[i], tz) == 0) {
-                free((char *)tz);
-                return i;
-            }
+int get_timezone_idx(const char *name, const char *alternative) {
+    for (int i = 0; i < count; i++) {
+        if (strcmp(timezones[i], name) == 0) {
+            return i;
         }
-        free((char *)tz);
-    } else {
+    }
+    if (alternative) {
         for (int i = 0; i < count; i++) {
             if (strcmp(timezones[i], alternative) == 0) {
                 return i;
@@ -97,13 +106,21 @@ int get_current_timezone_idx(const char *alternative) {
     return -1;
 }
 
-void free_timezones() {
-    if (timezones) {
-        for (int i = 0; i < count; i++) {
-            free(timezones[i]);
-        }
-        free(timezones);
-        timezones = NULL;
-        count = 0;
+const char *get_timezone_from_idx(int i) {
+    if (i >= 0 && i < count) {
+        return timezones[i];
+    } else {
+        return NULL;
+    }
+}
+
+int get_current_timezone_idx(const char *alternative) {
+    const char *tz = get_current_timezone();
+    if (tz) {
+        int result = get_timezone_idx(tz, alternative);
+        free((char *)tz);
+        return result;
+    } else {
+        return get_timezone_idx("UTC", NULL);
     }
 }

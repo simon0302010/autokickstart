@@ -167,7 +167,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_hexpand(timezone_dropdown, TRUE);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(timezone_dropdown), get_current_timezone_idx("UTC"));
     gtk_grid_attach(GTK_GRID(form_grid), timezone_dropdown, 1, 4, 1, 1);
-    free_timezones();
+
+    options.timezone = timezone_dropdown;
 
     // selinux dropdown
     gtk_grid_attach(GTK_GRID(form_grid), create_label("SELinux:"), 0, 5, 1, 1);
@@ -284,6 +285,8 @@ int main(int argc, char **argv) {
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
     status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app);
+
+    free_timezones();
 
     if (ks_file.file != NULL) {
         fclose(ks_file.file);

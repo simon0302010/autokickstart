@@ -4,6 +4,7 @@
 #include "../cJSON/cJSON.h"
 #include "../globals.h"
 #include "../utils/utils.h"
+#include "../locale/timezone.h"
 #include "gtk/gtkdropdown.h"
 
 int load_file(const char *path) {
@@ -45,6 +46,7 @@ int load_file(const char *path) {
     cJSON *bootloader_location_item = cJSON_GetObjectItem(root, "bootloader_location");
     cJSON *bootloader_options_item = cJSON_GetObjectItem(root, "bootloader_options");
     cJSON *initial_setup_item = cJSON_GetObjectItem(root, "initial_setup");
+    cJSON *timezone_item = cJSON_GetObjectItem(root, "timezone");
     
     if (root_enabled_item && root_enabled_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
@@ -79,6 +81,9 @@ int load_file(const char *path) {
     if (initial_setup_item && initial_setup_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.initial_setup), initial_setup_item->valueint);
     }
+    if (timezone_item && timezone_item->valuestring) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.timezone), get_timezone_idx(timezone_item->valuestring, "UTC"));
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -101,6 +106,7 @@ int save_file(const char *path) {
     cJSON_AddStringToObject(root, "bootloader_options", gtk_editable_get_text(GTK_EDITABLE(options.bootloader_options)));
     cJSON_AddNumberToObject(root, "bootloader_location", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.bootloader_location)));
     cJSON_AddBoolToObject(root, "initial_setup", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.initial_setup)));
+    cJSON_AddStringToObject(root, "timezone", get_timezone_from_idx(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.timezone))));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

@@ -2,12 +2,13 @@
 	"root_enabled":	true,
 	"root_password":	"",
 	"graphics_mode":	1,
-	"locale":	2,
-	"keyboard":	6,
+	"locale":	64,
+	"keyboard":	41,
 	"selinux":	1,
-	"clearpart":	"linux",
+	"clearpart":	"all",
 	"autopart":	true,
 	"bootloader_options":	"test",
 	"bootloader_location":	0,
-	"initial_setup":	true
+	"initial_setup":	true,
+	"timezone":	"Europe/Berlin"
 }

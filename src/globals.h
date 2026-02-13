@@ -18,6 +18,7 @@ struct KickstartOptions {
     GtkWidget *bootloader_location;
     GtkWidget *bootloader_options;
     GtkWidget *initial_setup;
+    GtkWidget *timezone;
 };
 
 struct OpenedFile {

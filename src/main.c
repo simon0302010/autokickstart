@@ -5,12 +5,15 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
+#include "glib.h"
+#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
 #include "file/file.h"
 #include "kickstart/kickstart.h"
 #include "globals.h"
+#include "locale/timezone.h"
 
 GtkWidget *window;
 GtkWidget *label;
@@ -151,19 +154,34 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_grid_attach(GTK_GRID(form_grid), layout_chooser, 1, 3, 1, 1);
     options.layout = layout_chooser;
 
+    // timezone dropdown
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Timezone:"), 0, 4, 1, 1);
+
+    int timezone_count;
+    char **timezones = get_timezones(&timezone_count);
+    if (!timezones) {
+        g_print("failed to get list of timezones");
+        return;
+    }
+    GtkWidget *timezone_dropdown = gtk_drop_down_new_from_strings((const char * const *)timezones);
+    gtk_widget_set_hexpand(timezone_dropdown, TRUE);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(timezone_dropdown), get_current_timezone_idx("UTC"));
+    gtk_grid_attach(GTK_GRID(form_grid), timezone_dropdown, 1, 4, 1, 1);
+    free_timezones();
+
     // selinux dropdown
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("SELinux:"), 0, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("SELinux:"), 0, 5, 1, 1);
 
     const char *selinux_options[] = {"Disabled", "Permissive", "Enforcing", NULL};
     GtkWidget *selinux_chooser = gtk_drop_down_new_from_strings(selinux_options);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(selinux_chooser), 2);
     gtk_widget_set_hexpand(selinux_chooser, TRUE);
     gtk_widget_set_tooltip_text(selinux_chooser, "Sets the state of SELinux on the installed system.");
-    gtk_grid_attach(GTK_GRID(form_grid), selinux_chooser, 1, 4, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), selinux_chooser, 1, 5, 1, 1);
     options.selinux = selinux_chooser;
 
     // clearpart
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Delete Partitions:"), 0, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Delete Partitions:"), 0, 6, 1, 1);
 
     GtkWidget *clearpart_all = gtk_check_button_new_with_label("All");
     GtkWidget *clearpart_linux = gtk_check_button_new_with_label("Linux");
@@ -183,24 +201,24 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_append(GTK_BOX(clearpart_box), clearpart_linux);
     gtk_box_append(GTK_BOX(clearpart_box), clearpart_none);
 
-    gtk_grid_attach(GTK_GRID(form_grid), clearpart_box, 1, 5, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), clearpart_box, 1, 6, 1, 1);
 
     options.clearpart_all = clearpart_all;
     options.clearpart_linux = clearpart_linux;
     options.clearpart_none = clearpart_none;
 
     // autopart option
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Partitioning:"), 0, 6, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Partitioning:"), 0, 7, 1, 1);
 
     GtkWidget *autopart = gtk_check_button_new_with_label("Automatic");
     gtk_check_button_set_active(GTK_CHECK_BUTTON(autopart), TRUE);
     gtk_widget_set_sensitive(GTK_WIDGET(autopart), FALSE);
-    gtk_grid_attach(GTK_GRID(form_grid), autopart, 1, 6, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), autopart, 1, 7, 1, 1);
 
     options.autopart = autopart;
 
     // bootloader
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Bootloader:"), 0, 7, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Bootloader:"), 0, 8, 1, 1);
 
     GtkWidget *bootloader_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_box_append(GTK_BOX(bootloader_box), create_label("Location:"));
@@ -218,16 +236,16 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     gtk_box_append(GTK_BOX(bootloader_box), bootloader_options);
 
-    gtk_grid_attach(GTK_GRID(form_grid), bootloader_box, 1, 7, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), bootloader_box, 1, 8, 1, 1);
 
     options.bootloader_options = bootloader_options;
     options.bootloader_location = bootloader_location_dropdown;
 
     // initial setup
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Initial Setup:"), 0, 8, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Initial Setup:"), 0, 9, 1, 1);
 
     GtkWidget *enable_initial_setup = gtk_check_button_new_with_label("Enabled");
-    gtk_grid_attach(GTK_GRID(form_grid), enable_initial_setup, 1, 8, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), enable_initial_setup, 1, 9, 1, 1);
 
     options.initial_setup = enable_initial_setup;
 

@@ -246,9 +246,18 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Initial Setup:"), 0, 9, 1, 1);
 
     GtkWidget *enable_initial_setup = gtk_check_button_new_with_label("Enabled");
+    gtk_widget_set_tooltip_text(enable_initial_setup, "Determine whether the Initial Setup application starts the first time the system is booted. If enabled, the initial-setup package must be installed.");
     gtk_grid_attach(GTK_GRID(form_grid), enable_initial_setup, 1, 9, 1, 1);
 
     options.initial_setup = enable_initial_setup;
+
+    // packages
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Packages:"), 0, 10, 1, 1);
+
+    GtkWidget *packages_input = gtk_entry_new();
+    gtk_widget_set_hexpand(packages_input, TRUE);
+    gtk_widget_set_tooltip_text(packages_input, "This describes the software packages to be installed. You can specify packages by environment, group, or by their package names.");
+    gtk_grid_attach(GTK_GRID(form_grid), packages_input, 1, 10, 1, 1);
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

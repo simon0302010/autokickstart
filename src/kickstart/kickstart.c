@@ -10,6 +10,7 @@
 #include "../locale/locales.h"
 #include "../locale/kb.h"
 #include "gtk/gtkdropdown.h"
+#include "locale/timezone.h"
 
 struct OpenedFile ks_file;
 
@@ -44,16 +45,9 @@ struct OpenedFile create_temp_ks() {
 char *write_ks_from_options() {
     ks_file = create_temp_ks();
 
-    const char *graphics_mode_const = gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.graphics_mode))));
-    if (graphics_mode_const) {
-        char *graphics_mode = malloc(strlen(graphics_mode_const) + 1);
-        if (graphics_mode) {
-            strcpy(graphics_mode, graphics_mode_const);
-            for (char *p = graphics_mode; *p; ++p) *p = tolower(*p);
-            fprintf(ks_file.file, "%s\n", graphics_mode);
-            free(graphics_mode);
-        }
-    }
+    char *graphics_mode = (char *)gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.graphics_mode))));
+    for (char *p = graphics_mode; *p; ++p) *p = tolower(*p);
+    fprintf(ks_file.file, "%s\n", graphics_mode);
 
     if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled))) {
         const char *rootpw = gtk_editable_get_text(GTK_EDITABLE(options.root_password));
@@ -67,6 +61,13 @@ char *write_ks_from_options() {
 
     const char *layout_str = get_layout_id(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.layout)));
     fprintf(ks_file.file, "keyboard --xlayouts=%s\n", layout_str);
+
+    const char *timezone_str = get_timezone_from_idx(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.timezone)));
+    fprintf(ks_file.file, "timezone %s --utc\n", timezone_str);
+
+    char *selinux_mode = (char *)gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.selinux))));
+    for (char *p = selinux_mode; *p; ++p) *p = tolower(*p);
+    fprintf(ks_file.file, "selinux --%s\n", selinux_mode);
 
     if (ks_file.file != NULL) {
         fclose(ks_file.file);

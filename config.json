@@ -1,6 +1,6 @@
 {
 	"root_enabled":	true,
-	"root_password":	"",
+	"root_password":	"test",
 	"graphics_mode":	1,
 	"locale":	64,
 	"keyboard":	41,

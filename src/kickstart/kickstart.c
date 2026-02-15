@@ -2,11 +2,14 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <gtk/gtk.h>
 
 #include "kickstart.h"
 #include "../utils/utils.h"
 #include "globals.h"
-#include "gtk/gtk.h"
+#include "../locale/locales.h"
+#include "../locale/kb.h"
+#include "gtk/gtkdropdown.h"
 
 struct OpenedFile ks_file;
 
@@ -58,6 +61,12 @@ char *write_ks_from_options() {
     } else {
         fprintf(ks_file.file, "rootpw --lock\n");
     }
+
+    const char *lang_str = get_locale_id(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.locale)));
+    fprintf(ks_file.file, "lang %s\n", lang_str);
+
+    const char *layout_str = get_layout_id(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.layout)));
+    fprintf(ks_file.file, "keyboard --xlayouts=%s\n", layout_str);
 
     if (ks_file.file != NULL) {
         fclose(ks_file.file);

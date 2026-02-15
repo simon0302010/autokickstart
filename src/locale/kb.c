@@ -127,6 +127,14 @@ const char *get_layout_name(const char* name) {
     return NULL;
 }
 
+const char *get_layout_id(int index) {
+    get_layout_count();
+    if (index < 0 || (size_t)index >= layout_count) {
+        return NULL;
+    }
+    return layouts[index].id;
+}
+
 int get_layout_idx_by_id(const char* id) {
     for (size_t i = 0; layouts[i].id != NULL; i++) {
         if (strcmp(layouts[i].id, id) == 0) {

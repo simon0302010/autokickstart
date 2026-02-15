@@ -3,6 +3,7 @@
 
 const char *get_layout_name(const char* name);
 const char **get_layout_names();
+const char *get_layout_id(int index) ;
 int find_layout_index(const char *search);
 int find_current_system_layout_index(const char *alternative);
 

@@ -17,11 +17,12 @@
 
 GtkWidget *window;
 GtkWidget *label;
-struct OpenedFile ks_file;
 struct KickstartOptions options;
 
 static void build_iso() {
-    g_print("Coming soon\n");
+    char *ks_path = write_ks_from_options();
+    g_print("wrote kickstart file to %s\n", ks_path);
+    free(ks_path);
 }
 
 static bool is_fedora() {
@@ -285,7 +286,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
 int main(int argc, char **argv) {
     seed_rng();
-    ks_file = create_temp_ks();
 
     GtkApplication *app;
     int status;
@@ -297,11 +297,6 @@ int main(int argc, char **argv) {
 
     free_timezones();
 
-    if (ks_file.file != NULL) {
-        fclose(ks_file.file);
-    }
-    free(ks_file.path);
-    
     if (options.path != NULL) {
         g_free(options.path);
     }

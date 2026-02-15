@@ -1,7 +1,14 @@
 #include <stdio.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "kickstart.h"
 #include "../utils/utils.h"
+#include "globals.h"
+#include "gtk/gtk.h"
+
+struct OpenedFile ks_file;
 
 struct OpenedFile create_temp_ks() {
     struct OpenedFile open_file;
@@ -29,4 +36,32 @@ struct OpenedFile create_temp_ks() {
     }
 
     return open_file;
+}
+
+char *write_ks_from_options() {
+    ks_file = create_temp_ks();
+
+    const char *graphics_mode_const = gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.graphics_mode))));
+    if (graphics_mode_const) {
+        char *graphics_mode = malloc(strlen(graphics_mode_const) + 1);
+        if (graphics_mode) {
+            strcpy(graphics_mode, graphics_mode_const);
+            for (char *p = graphics_mode; *p; ++p) *p = tolower(*p);
+            fprintf(ks_file.file, "%s\n", graphics_mode);
+            free(graphics_mode);
+        }
+    }
+
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled))) {
+        const char *rootpw = gtk_editable_get_text(GTK_EDITABLE(options.root_password));
+        fprintf(ks_file.file, "rootpw --plaintext %s\n", rootpw);
+    } else {
+        fprintf(ks_file.file, "rootpw --lock\n");
+    }
+
+    if (ks_file.file != NULL) {
+        fclose(ks_file.file);
+    }
+
+    return ks_file.path;
 }

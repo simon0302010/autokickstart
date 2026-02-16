@@ -7,6 +7,7 @@
 
 #include "glib.h"
 #include "gtk/gtkdropdown.h"
+#include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -91,6 +92,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
     form_grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(form_grid), 8);
     gtk_grid_set_column_spacing(GTK_GRID(form_grid), 10);
+    gtk_widget_set_margin_end(form_grid, 4);
+    gtk_widget_set_margin_start(form_grid, 4);
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled_window), form_grid);
 
     // root user
@@ -270,6 +273,23 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_grid_attach(GTK_GRID(form_grid), after_install, 1, 11, 1, 1);
 
     options.after_install = after_install;
+
+    // additional options
+    GtkWidget *additional_options_label = create_label("Additional Options:");
+    gtk_widget_set_valign(additional_options_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_top(additional_options_label, 8);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 12, 1, 1);
+
+    GtkWidget *additional_options_scroll = gtk_scrolled_window_new();
+    gtk_widget_set_size_request(additional_options_scroll, -1, 100);
+    gtk_scrolled_window_set_has_frame(GTK_SCROLLED_WINDOW(additional_options_scroll), TRUE);
+    gtk_widget_set_hexpand(additional_options_scroll, TRUE);
+
+    GtkWidget *additional_options = gtk_text_view_new();
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(additional_options_scroll), additional_options);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 12, 1, 1);
+
+    options.additional_options = additional_options;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

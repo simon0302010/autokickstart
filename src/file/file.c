@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
+#include <string.h>
 
 #include "../cJSON/cJSON.h"
 #include "../globals.h"
@@ -48,6 +49,7 @@ int load_file(const char *path) {
     cJSON *initial_setup_item = cJSON_GetObjectItem(root, "initial_setup");
     cJSON *timezone_item = cJSON_GetObjectItem(root, "timezone");
     cJSON *after_install_item = cJSON_GetObjectItem(root, "after_install");
+    cJSON *additional_options_item = cJSON_GetObjectItem(root, "additional_options");
 
     if (root_enabled_item && root_enabled_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
@@ -88,6 +90,10 @@ int load_file(const char *path) {
     if (after_install_item && after_install_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.after_install), after_install_item->valueint);
     }
+    if (additional_options_item && additional_options_item->valuestring) {
+        GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
+        gtk_text_buffer_set_text(GTK_TEXT_BUFFER(additional_options_buffer), additional_options_item->valuestring, strlen(additional_options_item->valuestring));
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -112,6 +118,10 @@ int save_file(const char *path) {
     cJSON_AddBoolToObject(root, "initial_setup", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.initial_setup)));
     cJSON_AddStringToObject(root, "timezone", get_timezone_from_idx(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.timezone))));
     cJSON_AddNumberToObject(root, "after_install", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.after_install)));
+    GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
+    cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

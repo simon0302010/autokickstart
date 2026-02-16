@@ -96,6 +96,12 @@ char *write_ks_from_options() {
     const char *after_install_options[] = {"halt", "poweroff", "reboot", "reboot --eject", "shutdown"};
     fprintf(ks_file.file, "%s\n", after_install_options[after_install_idx]);
 
+    GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
+    char *additional_options = gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE);
+    fprintf(ks_file.file, "%s\n", additional_options);
+
     if (ks_file.file != NULL) {
         fclose(ks_file.file);
     }

@@ -11,5 +11,6 @@
 	"bootloader_location":	0,
 	"initial_setup":	true,
 	"timezone":	"Europe/Berlin",
-	"after_install":	3
+	"after_install":	3,
+	"additional_options":	"line 1\nline 2"
 }

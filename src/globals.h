@@ -20,6 +20,7 @@ struct KickstartOptions {
     GtkWidget *initial_setup;
     GtkWidget *timezone;
     GtkWidget *after_install;
+    GtkWidget *additional_options;
 };
 
 struct OpenedFile {

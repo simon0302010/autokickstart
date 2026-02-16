@@ -252,13 +252,24 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     options.initial_setup = enable_initial_setup;
 
-    // packages
+    // packages (TODO)
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Packages:"), 0, 10, 1, 1);
 
     GtkWidget *packages_input = gtk_entry_new();
     gtk_widget_set_hexpand(packages_input, TRUE);
     gtk_widget_set_tooltip_text(packages_input, "This describes the software packages to be installed. You can specify packages by environment, group, or by their package names.");
     gtk_grid_attach(GTK_GRID(form_grid), packages_input, 1, 10, 1, 1);
+
+    // what to do after installation
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("After Installation:"), 0, 11, 1, 1);
+
+    const char *after_install_options[] = {"Wait for user input", "Poweroff", "Reboot", "Reboot and Eject", "Shutdown", NULL};
+    GtkWidget *after_install = gtk_drop_down_new_from_strings(after_install_options);
+    gtk_widget_set_hexpand(after_install, TRUE);
+    gtk_drop_down_set_selected(GTK_DROP_DOWN(after_install), 4);
+    gtk_grid_attach(GTK_GRID(form_grid), after_install, 1, 11, 1, 1);
+
+    options.after_install = after_install;
 
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

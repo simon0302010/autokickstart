@@ -47,7 +47,8 @@ int load_file(const char *path) {
     cJSON *bootloader_options_item = cJSON_GetObjectItem(root, "bootloader_options");
     cJSON *initial_setup_item = cJSON_GetObjectItem(root, "initial_setup");
     cJSON *timezone_item = cJSON_GetObjectItem(root, "timezone");
-    
+    cJSON *after_install_item = cJSON_GetObjectItem(root, "after_install");
+
     if (root_enabled_item && root_enabled_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
     }
@@ -84,6 +85,9 @@ int load_file(const char *path) {
     if (timezone_item && timezone_item->valuestring) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.timezone), get_timezone_idx(timezone_item->valuestring, "UTC"));
     }
+    if (after_install_item && after_install_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.after_install), after_install_item->valueint);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -107,6 +111,7 @@ int save_file(const char *path) {
     cJSON_AddNumberToObject(root, "bootloader_location", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.bootloader_location)));
     cJSON_AddBoolToObject(root, "initial_setup", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.initial_setup)));
     cJSON_AddStringToObject(root, "timezone", get_timezone_from_idx(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.timezone))));
+    cJSON_AddNumberToObject(root, "after_install", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.after_install)));
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

@@ -10,5 +10,6 @@
 	"bootloader_options":	"test",
 	"bootloader_location":	0,
 	"initial_setup":	true,
-	"timezone":	"Europe/Berlin"
+	"timezone":	"Europe/Berlin",
+	"after_install":	3
 }

@@ -9,6 +9,7 @@
 #include "globals.h"
 #include "../locale/locales.h"
 #include "../locale/kb.h"
+#include "gtk/gtkdropdown.h"
 #include "locale/timezone.h"
 
 struct OpenedFile ks_file;
@@ -69,7 +70,7 @@ char *write_ks_from_options() {
     fprintf(ks_file.file, "selinux --%s\n", selinux_mode);
 
     if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.autopart))) {
-        fprintf(ks_file.file, "autopart");
+        fprintf(ks_file.file, "autopart\n");
     }
 
     char clearpart[6];
@@ -84,6 +85,16 @@ char *write_ks_from_options() {
     } else {
         fprintf(ks_file.file, "bootloader --location=%s --append=\"%s\"\n", bootloader_location, bootloader_options);
     }
+
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.initial_setup))) {
+        fprintf(ks_file.file, "firstboot --enable\n");
+    } else {
+        fprintf(ks_file.file, "firstboot --disable\n");
+    }
+
+    int after_install_idx = gtk_drop_down_get_selected(GTK_DROP_DOWN(options.after_install));
+    const char *after_install_options[] = {"halt", "poweroff", "reboot", "reboot --eject", "shutdown"};
+    fprintf(ks_file.file, "%s\n", after_install_options[after_install_idx]);
 
     if (ks_file.file != NULL) {
         fclose(ks_file.file);

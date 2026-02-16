@@ -9,7 +9,6 @@
 #include "globals.h"
 #include "../locale/locales.h"
 #include "../locale/kb.h"
-#include "gtk/gtkdropdown.h"
 #include "locale/timezone.h"
 
 struct OpenedFile ks_file;
@@ -68,6 +67,23 @@ char *write_ks_from_options() {
     char *selinux_mode = (char *)gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.selinux))));
     for (char *p = selinux_mode; *p; ++p) *p = tolower(*p);
     fprintf(ks_file.file, "selinux --%s\n", selinux_mode);
+
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.autopart))) {
+        fprintf(ks_file.file, "autopart");
+    }
+
+    char clearpart[6];
+    get_selected_clearpart(clearpart);
+    fprintf(ks_file.file, "clearpart --%s\n", clearpart);
+
+    char *bootloader_location = (char *)gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.bootloader_location))));
+    for (char *p = bootloader_location; *p; ++p) *p = tolower(*p);
+    const char *bootloader_options = gtk_editable_get_text(GTK_EDITABLE(options.bootloader_options));
+    if (strlen(bootloader_options) == 0) {
+        fprintf(ks_file.file, "bootloader --location=%s\n", bootloader_location);
+    } else {
+        fprintf(ks_file.file, "bootloader --location=%s --append=\"%s\"\n", bootloader_location, bootloader_options);
+    }
 
     if (ks_file.file != NULL) {
         fclose(ks_file.file);

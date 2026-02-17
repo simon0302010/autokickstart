@@ -5,9 +5,6 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
-#include "glib.h"
-#include "gtk/gtkdropdown.h"
-#include "gtk/gtkshortcut.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -15,6 +12,7 @@
 #include "kickstart/kickstart.h"
 #include "globals.h"
 #include "locale/timezone.h"
+#include "kickstart/packages.h"
 
 GtkWidget *window;
 GtkWidget *label;
@@ -258,10 +256,11 @@ static void activate(GtkApplication *app, gpointer user_data) {
     // packages (TODO)
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Packages:"), 0, 10, 1, 1);
 
-    GtkWidget *packages_input = gtk_entry_new();
-    gtk_widget_set_hexpand(packages_input, TRUE);
-    gtk_widget_set_tooltip_text(packages_input, "This describes the software packages to be installed. You can specify packages by environment, group, or by their package names.");
-    gtk_grid_attach(GTK_GRID(form_grid), packages_input, 1, 10, 1, 1);
+    GtkWidget *packages_button = gtk_button_new_with_label("Manage Packages");
+    gtk_widget_set_hexpand(packages_button, TRUE);
+    gtk_widget_set_tooltip_text(packages_button, "This describes the software packages to be installed. You can specify packages by environment, group, or by their package names.");
+    g_signal_connect(G_OBJECT(packages_button), "clicked", G_CALLBACK(open_package_management), NULL);
+    gtk_grid_attach(GTK_GRID(form_grid), packages_button, 1, 10, 1, 1);
 
     // what to do after installation
     gtk_grid_attach(GTK_GRID(form_grid), create_label("After Installation:"), 0, 11, 1, 1);

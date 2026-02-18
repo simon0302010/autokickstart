@@ -1,12 +1,212 @@
+// Source - https://stackoverflow.com/a/77619798
+// Posted by Holger
+// Retrieved 2026-02-18, License - CC BY-SA 4.0
+
+  /*
+   * The sole purpose of this program is to test some approaches to using 
+   * ListView with GTK4, C, and VFL.It may contain errors and does not 
+   * claim to be considered "best practice".
+   */
+
 #include <gtk/gtk.h>
 
-void open_package_management(GtkWidget *open_management_button, gpointer user_data) {
-    GtkWidget *pkg_window = gtk_window_new();
-    gtk_window_set_title(GTK_WINDOW(pkg_window), "Manage Packages");
-    gtk_window_set_default_size(GTK_WINDOW(pkg_window), 300, 500);
+static GListModel* create_model()
+{
+    GListStore *store;
+    store = g_list_store_new(GTK_TYPE_STRING_OBJECT);
+    g_list_store_append(store, gtk_string_object_new("Test 1"));
+    g_list_store_append(store, gtk_string_object_new("Test 2"));
+    g_list_store_append(store, gtk_string_object_new("Test 3"));
+    g_list_store_append(store, gtk_string_object_new("Test 4"));
+    g_list_store_append(store, gtk_string_object_new("Test 5"));
 
-    GtkWidget *placeholder_label = gtk_label_new("Coming soon");
-    gtk_window_set_child(GTK_WINDOW(pkg_window), placeholder_label);
+    return G_LIST_MODEL (store);
+}
 
-    gtk_window_present(GTK_WINDOW(pkg_window));
+/*
+ * Create a class derived from Widget that contains the controls 
+ * and implements the Layout Manager.
+ */
+
+#define LISTVFL_TYPE_LAYOUT (listvfl_layout_get_type())
+
+G_DECLARE_FINAL_TYPE (ListvflLayout, listvfl_layout, LISTVFL, LAYOUT, 
+GtkWidget)
+
+struct _ListvflLayout
+{
+    GtkWidget parent_instance;
+ 
+    GtkWidget *scrolledwindow;  
+    GtkWidget *listview;
+    GtkWidget *label;
+    GtkWidget *btndelete;
+    GtkWidget *btnadd;
+    GtkWidget *entry;
+    GtkSingleSelection *selection;
+    guint position;
+  };
+
+G_DEFINE_TYPE (ListvflLayout, listvfl_layout, GTK_TYPE_WIDGET)
+
+static void
+setup_list_item_cb (GtkListItemFactory *factory, GtkListItem *list_item)
+{
+    GtkWidget*label = gtk_label_new (NULL);
+    gtk_list_item_set_child (GTK_LIST_ITEM(list_item), label);
+}
+
+static void bind_list_item_cb (GtkListItemFactory *factory, GtkListItem *list_item,  gpointer listvfllayout) {
+    GtkWidget *label = gtk_list_item_get_child(list_item);
+    GtkStringObject *str = gtk_list_item_get_item(list_item);
+    const char *string = gtk_string_object_get_string(str);
+    gtk_label_set_text(GTK_LABEL(label), string);
+
+    if (gtk_list_item_get_selected(list_item))
+    {
+        ListvflLayout  *widget = (ListvflLayout*)listvfllayout;
+        GtkWidget *label1 = GTK_WIDGET(widget->label);
+        gtk_label_set_text(GTK_LABEL(label1), string);
+        widget->position = gtk_list_item_get_position(list_item);
+    }
+}
+
+static void selection_changed(GObject *object, GParamSpec *pspec, GtkWidget *listvfllayout) {
+    GtkListItem *list_item=gtk_single_selection_get_selected_item(GTK_SINGLE_SELECTION(object));
+    guint pos = gtk_single_selection_get_selected(GTK_SINGLE_SELECTION(object));
+    const char *string = gtk_string_object_get_string(GTK_STRING_OBJECT(list_item));
+    ListvflLayout  *widget = (ListvflLayout*)listvfllayout;
+    gtk_label_set_label(GTK_LABEL(widget->label),string);
+}
+
+static void delete(GtkWidget *btndelete, gpointer listvfllayout) {
+    ListvflLayout *widget = LISTVFL_LAYOUT(listvfllayout);
+    GListModel *store = gtk_single_selection_get_model(widget->selection);
+    guint pos = gtk_single_selection_get_selected(GTK_SINGLE_SELECTION(widget->selection));
+    
+    if (pos != GTK_INVALID_LIST_POSITION && g_list_model_get_n_items(store) > 0) {
+        g_list_store_remove(G_LIST_STORE(store), pos);
+        gtk_label_set_label(GTK_LABEL(widget->label), "No package selected");
+    }
+}
+
+static void add(GtkWidget *btnadd, gpointer listvfllayout)
+{
+    ListvflLayout *widget = LISTVFL_LAYOUT(listvfllayout);
+    GtkEntryBuffer *buffer;
+    const char *text;
+    buffer = gtk_entry_get_buffer(GTK_ENTRY(widget->entry));
+    text = gtk_entry_buffer_get_text(buffer);
+    if (strlen(text) > 0)
+    {
+        GListModel *store = gtk_single_selection_get_model(widget->selection);
+        g_list_store_append(G_LIST_STORE(store), gtk_string_object_new(text));
+    }
+    gtk_entry_buffer_delete_text(buffer,0,-1);
+}
+
+static void
+listvfl_layout_dispose (GObject *object)
+{
+    ListvflLayout *self = LISTVFL_LAYOUT (object);
+    g_clear_pointer (&self->scrolledwindow, gtk_widget_unparent);  
+    g_clear_pointer (&self->label, gtk_widget_unparent);
+    g_clear_pointer (&self->btndelete, gtk_widget_unparent);
+    g_clear_pointer (&self->btnadd, gtk_widget_unparent);
+    g_clear_pointer (&self->entry, gtk_widget_unparent);
+    G_OBJECT_CLASS (listvfl_layout_parent_class)->dispose (object);
+}
+
+static void
+listvfl_layout_class_init (ListvflLayoutClass *class)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(class);
+    GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (class);
+    object_class->dispose = listvfl_layout_dispose;
+    // Layout manager
+    gtk_widget_class_set_layout_manager_type 
+(widget_class,GTK_TYPE_BIN_LAYOUT);
+}
+
+// Initializing the class
+static void listvfl_layout_init (ListvflLayout *self) {
+    GtkWidget *main_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(main_grid), 8);
+    gtk_grid_set_column_spacing(GTK_GRID(main_grid), 10);
+    gtk_widget_set_margin_start(main_grid, 15);
+    gtk_widget_set_margin_end(main_grid, 15);
+    gtk_widget_set_margin_top(main_grid, 15);
+    gtk_widget_set_margin_bottom(main_grid, 15);
+
+    GtkWidget *right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
+
+    GtkListItemFactory *factory;
+    GListModel *model;
+    self->position = 0;
+
+    GtkWidget *widget = GTK_WIDGET (self);
+
+    self->label = gtk_label_new(NULL);
+
+    self->btndelete = gtk_button_new_with_label("Delete");
+    gtk_widget_add_css_class(self->btndelete, "destructive-action");
+    g_signal_connect(self->btndelete,"clicked",G_CALLBACK(delete),self);
+
+    self->listview = gtk_list_view_new(NULL,NULL);        
+    model = create_model();
+    self->selection = gtk_single_selection_new(G_LIST_MODEL(model));
+    gtk_single_selection_set_autoselect(self->selection, TRUE);
+    gtk_list_view_set_model(GTK_LIST_VIEW(self->listview),GTK_SELECTION_MODEL(self->selection));
+    g_signal_connect (self->selection,"notify::selected", G_CALLBACK(selection_changed),self);
+
+    factory = gtk_signal_list_item_factory_new();
+    g_signal_connect (factory, "setup", G_CALLBACK (setup_list_item_cb), NULL);
+    g_signal_connect (factory, "bind",G_CALLBACK (bind_list_item_cb),self);
+    gtk_list_view_set_factory (GTK_LIST_VIEW (self->listview),factory);
+
+    self->scrolledwindow = gtk_scrolled_window_new();     
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(self->scrolledwindow),self->listview);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(self->scrolledwindow),
+                                   GTK_POLICY_NEVER,
+                                   GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_size_request(self->scrolledwindow, -1, 200);
+
+    self->entry = gtk_entry_new();
+    g_signal_connect(self->entry,"activate",G_CALLBACK(add),self);
+
+    self->btnadd = gtk_button_new_with_label("Add");
+    gtk_widget_add_css_class(self->btnadd, "suggested-action");
+    g_signal_connect(self->btnadd,"clicked",G_CALLBACK(add),self);
+
+    gtk_widget_set_hexpand(self->scrolledwindow, TRUE);
+    gtk_widget_set_vexpand(self->scrolledwindow, TRUE);
+
+    gtk_grid_attach(GTK_GRID(main_grid), self->label, 0, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(main_grid), self->scrolledwindow, 0, 1, 1, 1);
+
+    gtk_box_append(GTK_BOX(right_box), self->btndelete);
+    gtk_box_append(GTK_BOX(right_box), self->entry);
+    gtk_box_append(GTK_BOX(right_box), self->btnadd);
+
+    gtk_grid_attach(GTK_GRID(main_grid), right_box, 1, 1, 1, 1);
+    
+    gtk_widget_set_parent(GTK_WIDGET(main_grid), GTK_WIDGET(self));
+}
+
+void open_package_management(GtkWidget *open_management_button, gpointer user_data) 
+{
+    GtkWidget *window;
+    GtkWidget *box, *listvfllayout;
+
+    window = gtk_window_new();
+    gtk_window_set_title (GTK_WINDOW (window), "Package Management");
+    gtk_widget_set_size_request (window, 200,400);
+    g_object_add_weak_pointer (G_OBJECT (window),(gpointer *)&window);
+    box = gtk_box_new(GTK_ORIENTATION_VERTICAL,12);
+    gtk_window_set_child(GTK_WINDOW (window), box);
+    listvfllayout = g_object_new(listvfl_layout_get_type(), NULL);
+    gtk_widget_set_hexpand(listvfllayout, TRUE);
+    gtk_widget_set_vexpand(listvfllayout, TRUE);
+    gtk_box_append (GTK_BOX (box), listvfllayout);
+    gtk_window_present (GTK_WINDOW(window));
 }

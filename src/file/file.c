@@ -123,6 +123,12 @@ int save_file(const char *path) {
     gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
     cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
 
+    /*const char *strings[1000];
+    for (int i = 0;;i++) {
+        if (g_list_store_)
+    }
+    cJSON *packages = cJSON_CreateStringArray(const char *const *strings, int count)*/
+    
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
 

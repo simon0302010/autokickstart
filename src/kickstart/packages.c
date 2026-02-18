@@ -11,14 +11,13 @@
 #include <gtk/gtk.h>
 
 #include "../globals.h"
-#include "glib.h"
 
 static void create_model() {
-    g_list_store_append(packages_store, gtk_string_object_new("Test 1"));
-    g_list_store_append(packages_store, gtk_string_object_new("Test 2"));
-    g_list_store_append(packages_store, gtk_string_object_new("Test 3"));
-    g_list_store_append(packages_store, gtk_string_object_new("Test 4"));
-    g_list_store_append(packages_store, gtk_string_object_new("Test 5"));
+    g_list_store_append(options.packages, gtk_string_object_new("Test 1"));
+    g_list_store_append(options.packages, gtk_string_object_new("Test 2"));
+    g_list_store_append(options.packages, gtk_string_object_new("Test 3"));
+    g_list_store_append(options.packages, gtk_string_object_new("Test 4"));
+    g_list_store_append(options.packages, gtk_string_object_new("Test 5"));
 }
 
 /*
@@ -124,8 +123,7 @@ listvfl_layout_class_init (ListvflLayoutClass *class)
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (class);
     object_class->dispose = listvfl_layout_dispose;
     // Layout manager
-    gtk_widget_class_set_layout_manager_type 
-(widget_class,GTK_TYPE_BIN_LAYOUT);
+    gtk_widget_class_set_layout_manager_type (widget_class,GTK_TYPE_BIN_LAYOUT);
 }
 
 // Initializing the class
@@ -153,7 +151,7 @@ static void listvfl_layout_init (ListvflLayout *self) {
     g_signal_connect(self->btndelete,"clicked",G_CALLBACK(delete),self);
 
     self->listview = gtk_list_view_new(NULL,NULL);        
-    self->selection = gtk_single_selection_new(G_LIST_MODEL(G_LIST_MODEL (packages_store)));
+    self->selection = gtk_single_selection_new(G_LIST_MODEL(G_LIST_MODEL (options.packages)));
     gtk_single_selection_set_autoselect(self->selection, TRUE);
     gtk_list_view_set_model(GTK_LIST_VIEW(self->listview),GTK_SELECTION_MODEL(self->selection));
     g_signal_connect (self->selection,"notify::selected", G_CALLBACK(selection_changed),self);

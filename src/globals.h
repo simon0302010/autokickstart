@@ -21,6 +21,7 @@ struct KickstartOptions {
     GtkWidget *timezone;
     GtkWidget *after_install;
     GtkWidget *additional_options;
+    GListStore *packages;
 };
 
 struct OpenedFile {
@@ -33,7 +34,5 @@ extern GtkWidget *label;
 
 extern struct OpenedFile ks_file;
 extern struct KickstartOptions options;
-
-extern GListStore *packages_store;
 
 #endif

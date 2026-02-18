@@ -18,6 +18,8 @@ GtkWidget *window;
 GtkWidget *label;
 struct KickstartOptions options;
 
+GListStore *packages_store;
+
 static void build_iso() {
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
@@ -316,6 +318,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
 int main(int argc, char **argv) {
     seed_rng();
+
+    packages_store = g_list_store_new(GTK_TYPE_STRING_OBJECT);
 
     GtkApplication *app;
     int status;

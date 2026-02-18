@@ -10,17 +10,15 @@
 
 #include <gtk/gtk.h>
 
-static GListModel* create_model()
-{
-    GListStore *store;
-    store = g_list_store_new(GTK_TYPE_STRING_OBJECT);
-    g_list_store_append(store, gtk_string_object_new("Test 1"));
-    g_list_store_append(store, gtk_string_object_new("Test 2"));
-    g_list_store_append(store, gtk_string_object_new("Test 3"));
-    g_list_store_append(store, gtk_string_object_new("Test 4"));
-    g_list_store_append(store, gtk_string_object_new("Test 5"));
+#include "../globals.h"
+#include "glib.h"
 
-    return G_LIST_MODEL (store);
+static void create_model() {
+    g_list_store_append(packages_store, gtk_string_object_new("Test 1"));
+    g_list_store_append(packages_store, gtk_string_object_new("Test 2"));
+    g_list_store_append(packages_store, gtk_string_object_new("Test 3"));
+    g_list_store_append(packages_store, gtk_string_object_new("Test 4"));
+    g_list_store_append(packages_store, gtk_string_object_new("Test 5"));
 }
 
 /*
@@ -37,6 +35,7 @@ struct _ListvflLayout
 {
     GtkWidget parent_instance;
  
+    GtkWidget *main_grid;
     GtkWidget *scrolledwindow;  
     GtkWidget *listview;
     GtkWidget *label;
@@ -114,6 +113,7 @@ listvfl_layout_dispose (GObject *object)
     g_clear_pointer (&self->btndelete, gtk_widget_unparent);
     g_clear_pointer (&self->btnadd, gtk_widget_unparent);
     g_clear_pointer (&self->entry, gtk_widget_unparent);
+    g_clear_pointer(&self->main_grid, gtk_widget_unparent);
     G_OBJECT_CLASS (listvfl_layout_parent_class)->dispose (object);
 }
 
@@ -153,8 +153,7 @@ static void listvfl_layout_init (ListvflLayout *self) {
     g_signal_connect(self->btndelete,"clicked",G_CALLBACK(delete),self);
 
     self->listview = gtk_list_view_new(NULL,NULL);        
-    model = create_model();
-    self->selection = gtk_single_selection_new(G_LIST_MODEL(model));
+    self->selection = gtk_single_selection_new(G_LIST_MODEL(G_LIST_MODEL (packages_store)));
     gtk_single_selection_set_autoselect(self->selection, TRUE);
     gtk_list_view_set_model(GTK_LIST_VIEW(self->listview),GTK_SELECTION_MODEL(self->selection));
     g_signal_connect (self->selection,"notify::selected", G_CALLBACK(selection_changed),self);
@@ -177,6 +176,8 @@ static void listvfl_layout_init (ListvflLayout *self) {
     self->btnadd = gtk_button_new_with_label("Add");
     gtk_widget_add_css_class(self->btnadd, "suggested-action");
     g_signal_connect(self->btnadd,"clicked",G_CALLBACK(add),self);
+
+    self->main_grid = main_grid;
 
     gtk_widget_set_hexpand(self->scrolledwindow, TRUE);
     gtk_widget_set_vexpand(self->scrolledwindow, TRUE);

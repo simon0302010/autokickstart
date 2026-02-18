@@ -34,4 +34,6 @@ extern GtkWidget *label;
 extern struct OpenedFile ks_file;
 extern struct KickstartOptions options;
 
+extern GListStore *packages_store;
+
 #endif

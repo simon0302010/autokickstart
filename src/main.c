@@ -5,6 +5,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
+#include "gio/gio.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -316,6 +317,8 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
 int main(int argc, char **argv) {
     seed_rng();
+
+    options.packages = g_list_store_new(GTK_TYPE_STRING_OBJECT);
 
     GtkApplication *app;
     int status;

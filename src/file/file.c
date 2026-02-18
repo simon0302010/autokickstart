@@ -6,6 +6,8 @@
 #include "../globals.h"
 #include "../utils/utils.h"
 #include "../locale/timezone.h"
+#include "gio/gio.h"
+#include "glib-object.h"
 #include "gtk/gtkdropdown.h"
 
 int load_file(const char *path) {
@@ -50,6 +52,7 @@ int load_file(const char *path) {
     cJSON *timezone_item = cJSON_GetObjectItem(root, "timezone");
     cJSON *after_install_item = cJSON_GetObjectItem(root, "after_install");
     cJSON *additional_options_item = cJSON_GetObjectItem(root, "additional_options");
+    cJSON *packages_item = cJSON_GetObjectItem(root, "packages");
 
     if (root_enabled_item && root_enabled_item->valueint) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
@@ -94,6 +97,15 @@ int load_file(const char *path) {
         GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(additional_options_buffer), additional_options_item->valuestring, strlen(additional_options_item->valuestring));
     }
+    if (packages_item && cJSON_IsArray(packages_item) && options.packages != NULL) {
+        g_list_store_remove_all(options.packages);
+        int array_size = cJSON_GetArraySize(packages_item);
+        for (int i = 0; i < array_size; i++) {
+            cJSON *pkg = cJSON_GetArrayItem(packages_item, i);
+            if (pkg && pkg->valuestring)
+                g_list_store_append(options.packages, gtk_string_object_new(pkg->valuestring));
+        }
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -123,12 +135,17 @@ int save_file(const char *path) {
     gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
     cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
 
-    /*const char *strings[1000];
-    for (int i = 0;;i++) {
-        if (g_list_store_)
+    // packages
+    guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages));
+    const char *packages_list[packages_count];
+    for (guint i = 0; i < packages_count; i++) {
+        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages), i));
+        packages_list[i] = gtk_string_object_get_string(pkg);
+        g_object_unref(pkg);
     }
-    cJSON *packages = cJSON_CreateStringArray(const char *const *strings, int count)*/
-    
+    cJSON *packages = cJSON_CreateStringArray(packages_list, packages_count);
+    cJSON_AddItemToObject(root, "packages", packages);
+
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);
 

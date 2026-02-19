@@ -5,7 +5,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
-#include "gio/gio.h"
+#include "glib-object.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -14,6 +14,7 @@
 #include "globals.h"
 #include "locale/timezone.h"
 #include "kickstart/packages.h"
+#include "kickstart/scripts.h"
 
 GtkWidget *window;
 GtkWidget *label;
@@ -274,11 +275,24 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     options.after_install = after_install;
 
+    // post install script
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Scripts:"), 0, 12, 1, 1);
+
+    GtkWidget *scripts_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+
+    GtkWidget *post_install_script_btn = gtk_button_new_with_label("Post Install");
+    gtk_widget_set_tooltip_text(post_install_script_btn, "Defines a script that is executed once the installation is completed.");
+    gtk_widget_set_hexpand(post_install_script_btn, TRUE);
+    g_signal_connect_swapped(G_OBJECT(post_install_script_btn), "clicked", G_CALLBACK(new_script_window_with_title), "Post Install Script");
+    gtk_box_append(GTK_BOX(scripts_box), post_install_script_btn);
+
+    gtk_grid_attach(GTK_GRID(form_grid), scripts_box, 1, 12, 1, 1);
+
     // additional options
     GtkWidget *additional_options_label = create_label("Additional Options:");
     gtk_widget_set_valign(additional_options_label, GTK_ALIGN_START);
     gtk_widget_set_margin_top(additional_options_label, 8);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 12, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 13, 1, 1);
 
     GtkWidget *additional_options_scroll = gtk_scrolled_window_new();
     gtk_widget_set_size_request(additional_options_scroll, -1, 100);
@@ -287,7 +301,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     GtkWidget *additional_options = gtk_text_view_new();
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(additional_options_scroll), additional_options);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 12, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 13, 1, 1);
 
     options.additional_options = additional_options;
 

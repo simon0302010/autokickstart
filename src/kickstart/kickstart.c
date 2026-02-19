@@ -12,10 +12,10 @@
 #include "gtk/gtkdropdown.h"
 #include "locale/timezone.h"
 
-struct OpenedFile ks_file;
+OpenedFile ks_file;
 
-struct OpenedFile create_temp_ks() {
-    struct OpenedFile open_file;
+OpenedFile create_temp_ks() {
+    OpenedFile open_file;
 
     char *ks_name = rand_str(20);
     if (!ks_name) {

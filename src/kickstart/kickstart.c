@@ -102,6 +102,16 @@ char *write_ks_from_options() {
     char *additional_options = gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE);
     fprintf(ks_file.file, "%s\n", additional_options);
 
+    // packages
+    fprintf(ks_file.file, "%%packages\n");
+    guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages));
+    for (guint i = 0; i < packages_count; i++) {
+        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages), i));
+        fprintf(ks_file.file, "%s\n", gtk_string_object_get_string(pkg));
+        g_object_unref(pkg);
+    }
+    fprintf(ks_file.file, "%%end\n");
+
     if (ks_file.file != NULL) {
         fclose(ks_file.file);
     }

@@ -318,7 +318,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 int main(int argc, char **argv) {
     seed_rng();
 
-    options.packages = g_list_store_new(GTK_TYPE_STRING_OBJECT);
+    options.packages.packages = g_list_store_new(GTK_TYPE_STRING_OBJECT);
 
     GtkApplication *app;
     int status;

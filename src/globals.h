@@ -3,6 +3,12 @@
 
 #include <gtk/gtk.h>
 
+struct Packages {
+    GListStore *packages;
+    GtkWidget *multilib;
+    GtkWidget *nocore;
+};
+
 struct KickstartOptions {
     char *path;
     GtkWidget *root_enabled;
@@ -21,7 +27,7 @@ struct KickstartOptions {
     GtkWidget *timezone;
     GtkWidget *after_install;
     GtkWidget *additional_options;
-    GListStore *packages;
+    struct Packages packages;
 };
 
 struct OpenedFile {

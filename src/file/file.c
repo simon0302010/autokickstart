@@ -97,13 +97,13 @@ int load_file(const char *path) {
         GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
         gtk_text_buffer_set_text(GTK_TEXT_BUFFER(additional_options_buffer), additional_options_item->valuestring, strlen(additional_options_item->valuestring));
     }
-    if (packages_item && cJSON_IsArray(packages_item) && options.packages != NULL) {
-        g_list_store_remove_all(options.packages);
+    if (packages_item && cJSON_IsArray(packages_item) && options.packages.packages != NULL) {
+        g_list_store_remove_all(options.packages.packages);
         int array_size = cJSON_GetArraySize(packages_item);
         for (int i = 0; i < array_size; i++) {
             cJSON *pkg = cJSON_GetArrayItem(packages_item, i);
             if (pkg && pkg->valuestring)
-                g_list_store_append(options.packages, gtk_string_object_new(pkg->valuestring));
+                g_list_store_append(options.packages.packages, gtk_string_object_new(pkg->valuestring));
         }
     }
 
@@ -136,10 +136,10 @@ int save_file(const char *path) {
     cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
 
     // packages
-    guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages));
+    guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
     const char *packages_list[packages_count];
     for (guint i = 0; i < packages_count; i++) {
-        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages), i));
+        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
         packages_list[i] = gtk_string_object_get_string(pkg);
         g_object_unref(pkg);
     }

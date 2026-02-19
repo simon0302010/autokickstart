@@ -13,5 +13,5 @@
 	"timezone":	"Europe/Berlin",
 	"after_install":	3,
 	"additional_options":	"line 1\nline 2",
-	"packages":	["test 1", "test 3", "test 4"]
+	"packages":	["test 1", "test 3"]
 }

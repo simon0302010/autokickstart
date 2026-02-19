@@ -13,11 +13,11 @@
 #include "../globals.h"
 
 static void create_model() {
-    g_list_store_append(options.packages, gtk_string_object_new("Test 1"));
-    g_list_store_append(options.packages, gtk_string_object_new("Test 2"));
-    g_list_store_append(options.packages, gtk_string_object_new("Test 3"));
-    g_list_store_append(options.packages, gtk_string_object_new("Test 4"));
-    g_list_store_append(options.packages, gtk_string_object_new("Test 5"));
+    g_list_store_append(options.packages.packages, gtk_string_object_new("Test 1"));
+    g_list_store_append(options.packages.packages, gtk_string_object_new("Test 2"));
+    g_list_store_append(options.packages.packages, gtk_string_object_new("Test 3"));
+    g_list_store_append(options.packages.packages, gtk_string_object_new("Test 4"));
+    g_list_store_append(options.packages.packages, gtk_string_object_new("Test 5"));
 }
 
 /*
@@ -151,7 +151,7 @@ static void listvfl_layout_init (ListvflLayout *self) {
     g_signal_connect(self->btndelete,"clicked",G_CALLBACK(delete),self);
 
     self->listview = gtk_list_view_new(NULL,NULL);        
-    self->selection = gtk_single_selection_new(G_LIST_MODEL(G_LIST_MODEL (options.packages)));
+    self->selection = gtk_single_selection_new(G_LIST_MODEL(G_LIST_MODEL (options.packages.packages)));
     gtk_single_selection_set_autoselect(self->selection, TRUE);
     gtk_list_view_set_model(GTK_LIST_VIEW(self->listview),GTK_SELECTION_MODEL(self->selection));
     g_signal_connect (self->selection,"notify::selected", G_CALLBACK(selection_changed),self);
@@ -163,10 +163,6 @@ static void listvfl_layout_init (ListvflLayout *self) {
 
     self->scrolledwindow = gtk_scrolled_window_new();     
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(self->scrolledwindow),self->listview);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(self->scrolledwindow),
-                                   GTK_POLICY_NEVER,
-                                   GTK_POLICY_AUTOMATIC);
-    gtk_widget_set_size_request(self->scrolledwindow, -1, 200);
 
     self->entry = gtk_entry_new();
     g_signal_connect(self->entry,"activate",G_CALLBACK(add),self);
@@ -174,6 +170,13 @@ static void listvfl_layout_init (ListvflLayout *self) {
     self->btnadd = gtk_button_new_with_label("Add");
     gtk_widget_add_css_class(self->btnadd, "suggested-action");
     g_signal_connect(self->btnadd,"clicked",G_CALLBACK(add),self);
+
+    options.packages.multilib = gtk_check_button_new_with_label("Use Multilib");
+    gtk_widget_set_margin_top(options.packages.multilib, 30);
+    gtk_widget_set_tooltip_text(options.packages.multilib, "Configure the installed system for multilib packages (that is, to allow installing 32-bit packages on a 64-bit system) and install packages specified in this section as such.");
+
+    options.packages.nocore = gtk_check_button_new_with_label("No Core");
+    gtk_widget_set_tooltip_text(options.packages.nocore, "Do not install the @Core group.");
 
     self->main_grid = main_grid;
 
@@ -186,6 +189,8 @@ static void listvfl_layout_init (ListvflLayout *self) {
     gtk_box_append(GTK_BOX(right_box), self->btndelete);
     gtk_box_append(GTK_BOX(right_box), self->entry);
     gtk_box_append(GTK_BOX(right_box), self->btnadd);
+    gtk_box_append(GTK_BOX(right_box), options.packages.multilib);
+    gtk_box_append(GTK_BOX(right_box), options.packages.nocore);
 
     gtk_grid_attach(GTK_GRID(main_grid), right_box, 1, 1, 1, 1);
     

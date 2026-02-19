@@ -104,9 +104,9 @@ char *write_ks_from_options() {
 
     // packages
     fprintf(ks_file.file, "%%packages\n");
-    guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages));
+    guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
     for (guint i = 0; i < packages_count; i++) {
-        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages), i));
+        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
         fprintf(ks_file.file, "%s\n", gtk_string_object_get_string(pkg));
         g_object_unref(pkg);
     }

@@ -3,7 +3,7 @@
 
 #include "../globals.h"
 
-struct OpenedFile create_temp_ks();
+OpenedFile create_temp_ks();
 char *write_ks_from_options();
 
 #endif

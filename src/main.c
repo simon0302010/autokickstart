@@ -18,7 +18,7 @@
 
 GtkWidget *window;
 GtkWidget *label;
-struct KickstartOptions options;
+KickstartOptions options;
 
 static void build_iso() {
     char *ks_path = write_ks_from_options();
@@ -341,6 +341,7 @@ int main(int argc, char **argv) {
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
     status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app);
+    g_list_store_remove_all(options.packages.packages);
 
     free_timezones();
 

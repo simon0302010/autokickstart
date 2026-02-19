@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../cJSON/cJSON.h"
@@ -27,7 +28,13 @@ int load_file(const char *path) {
         return 1;
     }
     
-    fread(buffer, 1, length, f);
+
+    size_t bytes_read = fread(buffer, 1, length, f);
+    if (bytes_read != (size_t)length) {
+        free(buffer);
+        fclose(f);
+        return 1;
+    }
     buffer[length] = '\0';
     fclose(f);
     
@@ -54,8 +61,8 @@ int load_file(const char *path) {
     cJSON *additional_options_item = cJSON_GetObjectItem(root, "additional_options");
     cJSON *packages_item = cJSON_GetObjectItem(root, "packages");
 
-    if (root_enabled_item && root_enabled_item->valueint) {
-        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), root_enabled_item->valueint);
+    if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
     }
     if (root_password_item && root_password_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.root_password), root_password_item->valuestring);
@@ -75,8 +82,8 @@ int load_file(const char *path) {
     if (clearpart_item && clearpart_item->valuestring) {
         set_selected_clearpart(clearpart_item->valuestring);
     }
-    if (autopart_item && autopart_item->valueint) {
-        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.autopart), autopart_item->valueint);
+    if (autopart_item && cJSON_IsBool(autopart_item)) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.autopart), cJSON_IsTrue(autopart_item));
     }
     if (bootloader_location_item && bootloader_location_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.bootloader_location), bootloader_location_item->valueint);
@@ -84,8 +91,8 @@ int load_file(const char *path) {
     if (bootloader_options_item && bootloader_options_item->valuestring) {
         gtk_editable_set_text(GTK_EDITABLE(options.bootloader_options), bootloader_options_item->valuestring);
     }
-    if (initial_setup_item && initial_setup_item->valueint) {
-        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.initial_setup), initial_setup_item->valueint);
+    if (initial_setup_item && cJSON_IsBool(initial_setup_item)) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.initial_setup), cJSON_IsTrue(initial_setup_item));
     }
     if (timezone_item && timezone_item->valuestring) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.timezone), get_timezone_idx(timezone_item->valuestring, "UTC"));
@@ -102,8 +109,11 @@ int load_file(const char *path) {
         int array_size = cJSON_GetArraySize(packages_item);
         for (int i = 0; i < array_size; i++) {
             cJSON *pkg = cJSON_GetArrayItem(packages_item, i);
-            if (pkg && pkg->valuestring)
-                g_list_store_append(options.packages.packages, gtk_string_object_new(pkg->valuestring));
+            if (pkg && pkg->valuestring) {
+                GtkStringObject *str_obj = gtk_string_object_new(pkg->valuestring);
+                g_list_store_append(options.packages.packages, str_obj);
+                g_object_unref(str_obj);
+            }
         }
     }
 
@@ -128,7 +138,8 @@ int save_file(const char *path) {
     cJSON_AddStringToObject(root, "bootloader_options", gtk_editable_get_text(GTK_EDITABLE(options.bootloader_options)));
     cJSON_AddNumberToObject(root, "bootloader_location", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.bootloader_location)));
     cJSON_AddBoolToObject(root, "initial_setup", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.initial_setup)));
-    cJSON_AddStringToObject(root, "timezone", get_timezone_from_idx(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.timezone))));
+    const char *tz = get_timezone_from_idx(gtk_drop_down_get_selected(GTK_DROP_DOWN(options.timezone)));
+    cJSON_AddStringToObject(root, "timezone", tz ? tz : "UTC");
     cJSON_AddNumberToObject(root, "after_install", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.after_install)));
     GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
     GtkTextIter start, end;
@@ -170,7 +181,7 @@ static void on_cfg_save_finish(GObject *source_object, GAsyncResult *res, gpoint
         
         if (save_file(file_path) != 0) {
             g_free(file_path);
-            show_alert(window, "Failed to load file");
+            show_alert(window, "Failed to save file");
         } else {
             if (options.path) {
                 g_free(options.path);

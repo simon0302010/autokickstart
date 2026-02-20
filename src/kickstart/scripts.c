@@ -2,7 +2,6 @@
 
 #include "../utils/utils.h"
 #include "../globals.h"
-#include "gtk/gtkdropdown.h"
 
 void new_script_window_with_title(const char *title) {
     g_print("Creating scripts window \"%s\"\n", title);
@@ -55,10 +54,13 @@ void new_script_window_with_title(const char *title) {
 
 void setup_scripts_window_items() {
     options.post_install.code = gtk_text_view_new();
+    g_object_ref(options.post_install.code);
 
     const char *interpreters[] = {"/usr/bin/sh", "/usr/bin/bash", "/usr/bin/python", NULL};
     options.post_install.interpreter = gtk_drop_down_new_from_strings(interpreters);
+    g_object_ref(options.post_install.interpreter);
 
     options.post_install.nochroot = gtk_check_button_new_with_label("Disabled");
     gtk_widget_set_tooltip_text(options.post_install.nochroot, "Runs the script outside the chroot environment.");
+    g_object_ref(options.post_install.nochroot);
 }

@@ -11,6 +11,7 @@
 #include <gtk/gtk.h>
 
 #include "../globals.h"
+#include "glib-object.h"
 
 static void create_model() {
     g_list_store_append(options.packages.packages, gtk_string_object_new("Test 1"));
@@ -75,6 +76,8 @@ static void bind_list_item_cb (GtkListItemFactory *factory, GtkListItem *list_it
 
 static void selection_changed(GObject *object, GParamSpec *pspec, GtkWidget *listvfllayout) {
     GtkListItem *list_item=gtk_single_selection_get_selected_item(GTK_SINGLE_SELECTION(object));
+    if (list_item == NULL) return;
+    
     guint pos = gtk_single_selection_get_selected(GTK_SINGLE_SELECTION(object));
     const char *string = gtk_string_object_get_string(GTK_STRING_OBJECT(list_item));
     ListvflLayout  *widget = (ListvflLayout*)listvfllayout;
@@ -215,11 +218,14 @@ void open_package_management(GtkWidget *open_management_button, gpointer user_da
 // sets up all widgets in options that are used in packages popup
 void setup_packages_window_items() {
     options.packages.packages = g_list_store_new(GTK_TYPE_STRING_OBJECT);
+    g_object_ref(options.packages.packages);
 
     options.packages.multilib = gtk_check_button_new_with_label("Use Multilib");
     gtk_widget_set_margin_top(options.packages.multilib, 30);
     gtk_widget_set_tooltip_text(options.packages.multilib, "Configure the installed system for multilib packages (that is, to allow installing 32-bit packages on a 64-bit system) and install packages specified in this section as such.");
+    g_object_ref(options.packages.multilib);
 
     options.packages.nocore = gtk_check_button_new_with_label("No Core");
     gtk_widget_set_tooltip_text(options.packages.nocore, "Do not install the @Core group.");
+    g_object_ref(options.packages.nocore);
 }

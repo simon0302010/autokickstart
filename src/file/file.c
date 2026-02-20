@@ -62,6 +62,9 @@ int load_file(const char *path) {
     cJSON *packages_item = cJSON_GetObjectItem(root, "packages");
     cJSON *packages_multilib_item = cJSON_GetObjectItem(root, "packages_multilib");
     cJSON *packages_nocore_item = cJSON_GetObjectItem(root, "packages_nocore");
+    cJSON *post_install_script_item = cJSON_GetObjectItem(root, "post_install_script");
+    cJSON *post_install_interpreter_item = cJSON_GetObjectItem(root, "post_install_interpreter");
+    cJSON *post_install_no_chroot_item = cJSON_GetObjectItem(root, "post_install_no_chroot"); 
 
     if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
@@ -124,6 +127,16 @@ int load_file(const char *path) {
     if (packages_nocore_item && cJSON_IsBool(packages_nocore_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.packages.nocore), packages_nocore_item->valueint);
     }
+    if (post_install_script_item && post_install_script_item->valuestring) {
+        GtkTextBuffer *post_install_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.post_install.code));
+        gtk_text_buffer_set_text(GTK_TEXT_BUFFER(post_install_buffer), post_install_script_item->valuestring, strlen(post_install_script_item->valuestring));
+    }
+    if (post_install_interpreter_item && post_install_interpreter_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.post_install.interpreter), post_install_interpreter_item->valueint);
+    }
+    if (post_install_no_chroot_item && cJSON_IsBool(post_install_no_chroot_item)) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.post_install.nochroot), packages_nocore_item->valueint);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -134,6 +147,9 @@ int save_file(const char *path) {
 
     char clearpart[6];
     get_selected_clearpart(clearpart);
+
+    // used multiple times
+    GtkTextIter start, end;
 
     cJSON_AddBoolToObject(root, "root_enabled", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled)));
     cJSON_AddStringToObject(root, "root_password", gtk_editable_get_text(GTK_EDITABLE(options.root_password)));
@@ -150,11 +166,13 @@ int save_file(const char *path) {
     cJSON_AddStringToObject(root, "timezone", tz ? tz : "UTC");
     cJSON_AddNumberToObject(root, "after_install", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.after_install)));
     GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
-    GtkTextIter start, end;
     gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
     cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
     cJSON_AddBoolToObject(root, "packages_multilib", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.multilib)));
     cJSON_AddBoolToObject(root, "packages_nocore", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.nocore)));
+    GtkTextBuffer *post_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.post_install.code));
+    gtk_text_buffer_get_bounds(post_install_script_buffer, &start, &end);
+    cJSON_AddStringToObject(root, "post_install_script", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
 
     // packages
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));

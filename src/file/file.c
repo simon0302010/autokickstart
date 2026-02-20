@@ -61,7 +61,7 @@ int load_file(const char *path) {
     cJSON *additional_options_item = cJSON_GetObjectItem(root, "additional_options");
     cJSON *packages_item = cJSON_GetObjectItem(root, "packages");
     cJSON *packages_multilib_item = cJSON_GetObjectItem(root, "packages_multilib");
-    cJSON *packages_nocore_item = cJSON_GetObjectItem(root, "packages_nocore");
+    cJSON *packages_nocore_item = cJSON_GetObjectItem(root, "packages_no_core");
     cJSON *post_install_script_item = cJSON_GetObjectItem(root, "post_install_script");
     cJSON *post_install_interpreter_item = cJSON_GetObjectItem(root, "post_install_interpreter");
     cJSON *post_install_no_chroot_item = cJSON_GetObjectItem(root, "post_install_no_chroot"); 
@@ -169,10 +169,12 @@ int save_file(const char *path) {
     gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
     cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
     cJSON_AddBoolToObject(root, "packages_multilib", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.multilib)));
-    cJSON_AddBoolToObject(root, "packages_nocore", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.nocore)));
+    cJSON_AddBoolToObject(root, "packages_no_core", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.nocore)));
     GtkTextBuffer *post_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.post_install.code));
     gtk_text_buffer_get_bounds(post_install_script_buffer, &start, &end);
-    cJSON_AddStringToObject(root, "post_install_script", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
+    cJSON_AddStringToObject(root, "post_install_script", gtk_text_buffer_get_text(post_install_script_buffer, &start, &end, FALSE));
+    cJSON_AddNumberToObject(root, "post_install_interpreter", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.post_install.interpreter)));
+    cJSON_AddBoolToObject(root, "post_install_no_chroot", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.post_install.nochroot)));
 
     // packages
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));

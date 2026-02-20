@@ -9,6 +9,11 @@ typedef struct Packages {
     GtkWidget *nocore;
 } Packages;
 
+typedef struct Script {
+    GtkWidget *code;
+    GtkWidget *interpreter;
+} Script;
+
 typedef struct KickstartOptions {
     char *path;
     GtkWidget *root_enabled;
@@ -28,6 +33,7 @@ typedef struct KickstartOptions {
     GtkWidget *after_install;
     GtkWidget *additional_options;
     Packages packages;
+    Script post_install;
 } KickstartOptions;
 
 typedef struct OpenedFile {

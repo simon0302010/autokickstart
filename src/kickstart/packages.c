@@ -57,6 +57,10 @@ setup_list_item_cb (GtkListItemFactory *factory, GtkListItem *list_item)
 static void bind_list_item_cb (GtkListItemFactory *factory, GtkListItem *list_item,  gpointer listvfllayout) {
     GtkWidget *label = gtk_list_item_get_child(list_item);
     GtkStringObject *str = gtk_list_item_get_item(list_item);
+    
+    if (!GTK_IS_LABEL(label) || !GTK_IS_STRING_OBJECT(str))
+        return;
+
     const char *string = gtk_string_object_get_string(str);
     gtk_label_set_text(GTK_LABEL(label), string);
 
@@ -171,13 +175,6 @@ static void listvfl_layout_init (ListvflLayout *self) {
     gtk_widget_add_css_class(self->btnadd, "suggested-action");
     g_signal_connect(self->btnadd,"clicked",G_CALLBACK(add),self);
 
-    options.packages.multilib = gtk_check_button_new_with_label("Use Multilib");
-    gtk_widget_set_margin_top(options.packages.multilib, 30);
-    gtk_widget_set_tooltip_text(options.packages.multilib, "Configure the installed system for multilib packages (that is, to allow installing 32-bit packages on a 64-bit system) and install packages specified in this section as such.");
-
-    options.packages.nocore = gtk_check_button_new_with_label("No Core");
-    gtk_widget_set_tooltip_text(options.packages.nocore, "Do not install the @Core group.");
-
     self->main_grid = main_grid;
 
     gtk_widget_set_hexpand(self->scrolledwindow, TRUE);
@@ -204,7 +201,7 @@ void open_package_management(GtkWidget *open_management_button, gpointer user_da
 
     window = gtk_window_new();
     gtk_window_set_title (GTK_WINDOW (window), "Package Management");
-    gtk_widget_set_size_request (window, 200,400);
+    gtk_widget_set_size_request (window, 400,500);
     g_object_add_weak_pointer (G_OBJECT (window),(gpointer *)&window);
     box = gtk_box_new(GTK_ORIENTATION_VERTICAL,12);
     gtk_window_set_child(GTK_WINDOW (window), box);
@@ -213,4 +210,16 @@ void open_package_management(GtkWidget *open_management_button, gpointer user_da
     gtk_widget_set_vexpand(listvfllayout, TRUE);
     gtk_box_append (GTK_BOX (box), listvfllayout);
     gtk_window_present (GTK_WINDOW(window));
+}
+
+// sets up all widgets in options that are used in packages popup
+void setup_packages_window_items() {
+    options.packages.packages = g_list_store_new(GTK_TYPE_STRING_OBJECT);
+
+    options.packages.multilib = gtk_check_button_new_with_label("Use Multilib");
+    gtk_widget_set_margin_top(options.packages.multilib, 30);
+    gtk_widget_set_tooltip_text(options.packages.multilib, "Configure the installed system for multilib packages (that is, to allow installing 32-bit packages on a 64-bit system) and install packages specified in this section as such.");
+
+    options.packages.nocore = gtk_check_button_new_with_label("No Core");
+    gtk_widget_set_tooltip_text(options.packages.nocore, "Do not install the @Core group.");
 }

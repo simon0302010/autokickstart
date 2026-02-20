@@ -60,6 +60,8 @@ int load_file(const char *path) {
     cJSON *after_install_item = cJSON_GetObjectItem(root, "after_install");
     cJSON *additional_options_item = cJSON_GetObjectItem(root, "additional_options");
     cJSON *packages_item = cJSON_GetObjectItem(root, "packages");
+    cJSON *packages_multilib_item = cJSON_GetObjectItem(root, "packages_multilib");
+    cJSON *packages_nocore_item = cJSON_GetObjectItem(root, "packages_nocore");
 
     if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
@@ -116,6 +118,12 @@ int load_file(const char *path) {
             }
         }
     }
+    if (packages_multilib_item && cJSON_IsBool(packages_multilib_item)) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.packages.multilib), packages_multilib_item->valueint);
+    }
+    if (packages_nocore_item && cJSON_IsBool(packages_nocore_item)) {
+        gtk_check_button_set_active(GTK_CHECK_BUTTON(options.packages.nocore), packages_nocore_item->valueint);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -145,6 +153,8 @@ int save_file(const char *path) {
     GtkTextIter start, end;
     gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
     cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
+    cJSON_AddBoolToObject(root, "packages_multilib", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.multilib)));
+    cJSON_AddBoolToObject(root, "packages_nocore", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.nocore)));
 
     // packages
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));

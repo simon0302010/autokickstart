@@ -13,5 +13,7 @@
 	"timezone":	"Europe/Berlin",
 	"after_install":	3,
 	"additional_options":	"line 1\nline 2",
+	"packages_multilib":	true,
+	"packages_nocore":	true,
 	"packages":	["test 1", "test 3"]
 }

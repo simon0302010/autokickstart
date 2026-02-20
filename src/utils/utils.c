@@ -66,3 +66,9 @@ int set_selected_clearpart(const char *option) {
     }
     return 0;
 }
+
+GtkWidget *create_label(const char *text) {
+    label = gtk_label_new(text);
+    gtk_widget_set_halign(label, GTK_ALIGN_START);
+    return label;
+}

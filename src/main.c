@@ -5,7 +5,6 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
-#include "glib-object.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -45,12 +44,6 @@ static bool is_fedora() {
     return false;
 }
 
-static GtkWidget *create_label(const char *text) {
-    label = gtk_label_new(text);
-    gtk_widget_set_halign(label, GTK_ALIGN_START);
-    return label;
-}
-
 static void toogle_root_password_entry() {
     bool using_root_pw = gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled));
     gtk_widget_set_sensitive(options.root_password, using_root_pw);
@@ -60,6 +53,9 @@ static void toogle_root_password_entry() {
 }
 
 static void activate(GtkApplication *app, gpointer user_data) {
+    setup_packages_window_items();
+    setup_scripts_window_items();
+
     GtkWidget *main_box;
     GtkWidget *scrolled_window;
     GtkWidget *form_grid;
@@ -331,8 +327,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
 int main(int argc, char **argv) {
     seed_rng();
-
-    options.packages.packages = g_list_store_new(GTK_TYPE_STRING_OBJECT);
 
     GtkApplication *app;
     int status;

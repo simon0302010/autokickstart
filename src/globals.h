@@ -12,6 +12,7 @@ typedef struct Packages {
 typedef struct Script {
     GtkWidget *code;
     GtkWidget *interpreter;
+    GtkWidget *nochroot;
 } Script;
 
 typedef struct KickstartOptions {

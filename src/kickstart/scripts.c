@@ -45,6 +45,8 @@ void new_script_window_with_title(const char *title) {
 
     gtk_grid_attach(GTK_GRID(options_grid), create_label("Interpreter:"), 0, 0, 1, 1);
     gtk_grid_attach(GTK_GRID(options_grid), options.post_install.interpreter, 1, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(options_grid), create_label("Chroot:"), 0, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(options_grid), options.post_install.nochroot, 1, 1, 1, 1);
 
     gtk_grid_attach(GTK_GRID(main_grid), options_grid, 1, 1, 1, 1);
 
@@ -56,4 +58,7 @@ void setup_scripts_window_items() {
 
     const char *interpreters[] = {"/usr/bin/sh", "/usr/bin/bash", "/usr/bin/python", NULL};
     options.post_install.interpreter = gtk_drop_down_new_from_strings(interpreters);
+
+    options.post_install.nochroot = gtk_check_button_new_with_label("Disabled");
+    gtk_widget_set_tooltip_text(options.post_install.nochroot, "Runs the script outside the chroot environment.");
 }

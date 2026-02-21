@@ -64,7 +64,7 @@ int load_file(const char *path) {
     cJSON *packages_nocore_item = cJSON_GetObjectItem(root, "packages_no_core");
     cJSON *post_install_script_item = cJSON_GetObjectItem(root, "post_install_script");
     cJSON *post_install_interpreter_item = cJSON_GetObjectItem(root, "post_install_interpreter");
-    cJSON *post_install_no_chroot_item = cJSON_GetObjectItem(root, "post_install_no_chroot"); 
+    cJSON *post_install_no_chroot_item = cJSON_GetObjectItem(root, "post_install_no_chroot");
 
     if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
@@ -211,7 +211,7 @@ static void on_cfg_save_finish(GObject *source_object, GAsyncResult *res, gpoint
         
         if (save_file(file_path) != 0) {
             g_free(file_path);
-            show_alert(window, "Failed to save file");
+            show_alert(main_window, "Failed to save file");
         } else {
             if (options.path) {
                 g_free(options.path);
@@ -225,7 +225,7 @@ static void on_cfg_save_finish(GObject *source_object, GAsyncResult *res, gpoint
 void on_save_file() {
     if (options.path) {
         if (save_file(options.path) != 0) {
-            show_alert(window, "Failed to save file");
+            show_alert(main_window, "Failed to save file");
         }
     } else {
         GtkFileDialog *dialog = gtk_file_dialog_new();
@@ -239,7 +239,7 @@ void on_save_file() {
         gtk_file_dialog_set_filters(dialog, filters);
         g_object_unref(filter);
         g_object_unref(filters);
-        gtk_file_dialog_save(dialog, GTK_WINDOW(window), NULL, on_cfg_save_finish, NULL);
+        gtk_file_dialog_save(dialog, GTK_WINDOW(main_window), NULL, on_cfg_save_finish, NULL);
         g_object_unref(dialog);
     }
 }
@@ -253,7 +253,7 @@ static void on_cfg_open_finish(GObject *source_object, GAsyncResult *res, gpoint
         
         if (load_file(file_path) != 0) {
             g_free(file_path);
-            show_alert(window, "Failed to load file");
+            show_alert(main_window, "Failed to load file");
         } else {
             if (options.path != NULL) {
                 g_free(options.path);

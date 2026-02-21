@@ -3,15 +3,19 @@
 // Retrieved 2026-02-18, License - CC BY-SA 4.0
 
   /*
-   * The sole purpose of this program is to test some approaches to using 
-   * ListView with GTK4, C, and VFL.It may contain errors and does not 
+   * The sole purpose of this program is to test some approaches to using
+   * ListView with GTK4, C, and VFL.It may contain errors and does not
    * claim to be considered "best practice".
    */
 
 #include <gtk/gtk.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "../globals.h"
-#include "glib-object.h"
+#include "../utils/utils.h"
+#include "gio/gio.h"
 
 static void create_model() {
     g_list_store_append(options.packages.packages, gtk_string_object_new("Test 1"));
@@ -36,7 +40,7 @@ struct _ListvflLayout
     GtkWidget parent_instance;
  
     GtkWidget *main_grid;
-    GtkWidget *scrolledwindow;  
+    GtkWidget *scrolledwindow;
     GtkWidget *listview;
     GtkWidget *label;
     GtkWidget *btndelete;
@@ -48,9 +52,18 @@ struct _ListvflLayout
 
 G_DEFINE_TYPE (ListvflLayout, listvfl_layout, GTK_TYPE_WIDGET)
 
-static void
-setup_list_item_cb (GtkListItemFactory *factory, GtkListItem *list_item)
-{
+static bool pkg_exists(const char *pkg) {
+    unsigned long command_len = strlen("dnf info ") + strlen(pkg) + 1;
+    char *command = malloc(command_len);
+    if (!command) return false;
+    strcpy(command, "dnf info ");
+    strcat(command, pkg);
+    bool exists = (system(command) == 0);
+    free(command);
+    return exists;
+}
+
+static void setup_list_item_cb (GtkListItemFactory *factory, GtkListItem *list_item) {
     GtkWidget*label = gtk_label_new (NULL);
     gtk_list_item_set_child (GTK_LIST_ITEM(list_item), label);
 }
@@ -95,26 +108,32 @@ static void delete(GtkWidget *btndelete, gpointer listvfllayout) {
     }
 }
 
-static void add(GtkWidget *btnadd, gpointer listvfllayout)
-{
+static void add(GtkWidget *btnadd, gpointer listvfllayout) {
     ListvflLayout *widget = LISTVFL_LAYOUT(listvfllayout);
     GtkEntryBuffer *buffer;
     const char *text;
     buffer = gtk_entry_get_buffer(GTK_ENTRY(widget->entry));
     text = gtk_entry_buffer_get_text(buffer);
-    if (strlen(text) > 0)
-    {
-        GListModel *store = gtk_single_selection_get_model(widget->selection);
-        g_list_store_append(G_LIST_STORE(store), gtk_string_object_new(text));
+    if (strlen(text) > 0) {
+        if (pkg_exists(text)) {
+            GListModel *store = gtk_single_selection_get_model(widget->selection);
+            g_list_store_append(G_LIST_STORE(store), gtk_string_object_new(text));
+        } else {
+            const char *warning_prefix = "Could not locate package: ";
+            char *warning_msg = malloc(strlen(warning_prefix) + strlen(text) + 1);
+            strcpy(warning_msg, warning_prefix);
+            strcat(warning_msg, text);
+            GtkRoot *root = gtk_widget_get_root(GTK_WIDGET(widget));
+            show_alert(GTK_WIDGET(root), warning_msg);
+            free(warning_msg);
+        }
     }
     gtk_entry_buffer_delete_text(buffer,0,-1);
 }
 
-static void
-listvfl_layout_dispose (GObject *object)
-{
+static void listvfl_layout_dispose (GObject *object) {
     ListvflLayout *self = LISTVFL_LAYOUT (object);
-    g_clear_pointer (&self->scrolledwindow, gtk_widget_unparent);  
+    g_clear_pointer (&self->scrolledwindow, gtk_widget_unparent);
     g_clear_pointer (&self->label, gtk_widget_unparent);
     g_clear_pointer (&self->btndelete, gtk_widget_unparent);
     g_clear_pointer (&self->btnadd, gtk_widget_unparent);
@@ -123,9 +142,7 @@ listvfl_layout_dispose (GObject *object)
     G_OBJECT_CLASS (listvfl_layout_parent_class)->dispose (object);
 }
 
-static void
-listvfl_layout_class_init (ListvflLayoutClass *class)
-{
+static void listvfl_layout_class_init (ListvflLayoutClass *class) {
     GObjectClass *object_class = G_OBJECT_CLASS(class);
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (class);
     object_class->dispose = listvfl_layout_dispose;
@@ -168,7 +185,7 @@ static void listvfl_layout_init (ListvflLayout *self) {
     g_signal_connect (factory, "bind",G_CALLBACK (bind_list_item_cb),self);
     gtk_list_view_set_factory (GTK_LIST_VIEW (self->listview),factory);
 
-    self->scrolledwindow = gtk_scrolled_window_new();     
+    self->scrolledwindow = gtk_scrolled_window_new();
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(self->scrolledwindow),self->listview);
 
     self->entry = gtk_entry_new();

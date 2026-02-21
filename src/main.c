@@ -15,7 +15,7 @@
 #include "kickstart/packages.h"
 #include "kickstart/scripts.h"
 
-GtkWidget *window;
+GtkWidget *main_window;
 GtkWidget *label;
 KickstartOptions options;
 
@@ -64,9 +64,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
     GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_size_request(spacer, 20, -1);
 
-    window = gtk_application_window_new(app);
-    gtk_window_set_title(GTK_WINDOW(window), "Auto Kickstart");
-    gtk_window_set_default_size(GTK_WINDOW(window), 400, 500);
+    main_window = gtk_application_window_new(app);
+    gtk_window_set_title(GTK_WINDOW(main_window), "Auto Kickstart");
+    gtk_window_set_default_size(GTK_WINDOW(main_window), 400, 500);
 
     // main vertical box
     main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -74,7 +74,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_margin_end(main_box, 15);
     gtk_widget_set_margin_top(main_box, 15);
     gtk_widget_set_margin_bottom(main_box, 15);
-    gtk_window_set_child(GTK_WINDOW(window), main_box);
+    gtk_window_set_child(GTK_WINDOW(main_window), main_box);
 
     // scrolled window
     scrolled_window = gtk_scrolled_window_new();
@@ -314,7 +314,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_tooltip_text(save_btn, "Saves the current configuration to a file");
     gtk_widget_set_tooltip_text(build_btn, "Builds an ISO image with the current configuration");
 
-    g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file_dialog), window);
+    g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file_dialog), main_window);
     g_signal_connect_swapped(save_btn, "clicked", G_CALLBACK(on_save_file), NULL);
     g_signal_connect_swapped(build_btn, "clicked", G_CALLBACK(build_iso), NULL);
 
@@ -322,7 +322,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_box_append(GTK_BOX(button_box), save_btn);
     gtk_box_append(GTK_BOX(button_box), build_btn);
 
-    gtk_window_present(GTK_WINDOW(window));
+    gtk_window_present(GTK_WINDOW(main_window));
 }
 
 int main(int argc, char **argv) {

@@ -42,7 +42,7 @@ typedef struct OpenedFile {
     FILE *file;
 } OpenedFile;
 
-extern GtkWidget *window;
+extern GtkWidget *main_window;
 extern GtkWidget *label;
 
 extern OpenedFile ks_file;

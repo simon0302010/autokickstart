@@ -45,6 +45,8 @@ OpenedFile create_temp_ks() {
 char *write_ks_from_options() {
     ks_file = create_temp_ks();
 
+    GtkTextIter start, end;
+
     char *graphics_mode = (char *)gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.graphics_mode))));
     for (char *p = graphics_mode; *p; ++p) *p = tolower(*p);
     fprintf(ks_file.file, "%s\n", graphics_mode);
@@ -97,19 +99,38 @@ char *write_ks_from_options() {
     fprintf(ks_file.file, "%s\n", after_install_options[after_install_idx]);
 
     GtkTextBuffer *additional_options_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.additional_options));
-    GtkTextIter start, end;
     gtk_text_buffer_get_bounds(additional_options_buffer, &start, &end);
     char *additional_options = gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE);
     fprintf(ks_file.file, "%s\n", additional_options);
 
     // packages
-    fprintf(ks_file.file, "%%packages\n");
+    fprintf(ks_file.file, "%%packages");
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.multilib))) {
+        fprintf(ks_file.file, " --multilib");
+    }
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.nocore))) {
+        fprintf(ks_file.file, " --nocore");
+    }
+    fprintf(ks_file.file, "\n");
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
     for (guint i = 0; i < packages_count; i++) {
         GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
         fprintf(ks_file.file, "%s\n", gtk_string_object_get_string(pkg));
         g_object_unref(pkg);
     }
+    fprintf(ks_file.file, "%%end\n");
+
+    // post install script
+    fprintf(ks_file.file, "%%post");
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.post_install.nochroot))) {
+        fprintf(ks_file.file, " --nochroot");
+    }
+    fprintf(ks_file.file, " --interpreter=%s\n", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.post_install.interpreter)))));
+
+    GtkTextBuffer *post_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.post_install.code));
+    gtk_text_buffer_get_bounds(post_install_script_buffer, &start, &end);
+    fprintf(ks_file.file, "%s\n", gtk_text_buffer_get_text(post_install_script_buffer, &start, &end, FALSE));
+
     fprintf(ks_file.file, "%%end\n");
 
     if (ks_file.file != NULL) {

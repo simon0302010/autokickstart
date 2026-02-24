@@ -72,3 +72,22 @@ GtkWidget *create_label(const char *text) {
     gtk_widget_set_halign(label, GTK_ALIGN_START);
     return label;
 }
+
+bool is_fedora() {
+    FILE *os_release = fopen("/etc/os-release", "r");
+
+    if (os_release == NULL) {
+        return false;
+    }
+
+    char string[50];
+    while (fscanf(os_release, "%49s", string) == 1) {
+        if (strcasestr(string, "fedora")) {
+            fclose(os_release);
+            return true;
+        }
+    }
+
+    fclose(os_release);
+    return false;
+}

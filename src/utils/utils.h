@@ -10,5 +10,6 @@ void show_alert(GtkWidget *window, const char* msg);
 void get_selected_clearpart(char *dest);
 int set_selected_clearpart(const char *option);
 GtkWidget *create_label(const char *text);
+bool is_fedora();
 
 #endif

@@ -25,25 +25,6 @@ static void build_iso() {
     free(ks_path);
 }
 
-static bool is_fedora() {
-    FILE *os_release = fopen("/etc/os-release", "r");
-
-    if (os_release == NULL) {
-        return false;
-    }
-
-    char string[50];
-    while (fscanf(os_release, "%49s", string) == 1) {
-        if (strcasestr(string, "fedora")) {
-            fclose(os_release);
-            return true;
-        }
-    }
-
-    fclose(os_release);
-    return false;
-}
-
 static void toogle_root_password_entry() {
     bool using_root_pw = gtk_check_button_get_active(GTK_CHECK_BUTTON(options.root_enabled));
     gtk_widget_set_sensitive(options.root_password, using_root_pw);

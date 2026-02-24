@@ -18,5 +18,7 @@
 	"post_install_script":	"echo \"install successful\"",
 	"post_install_interpreter":	2,
 	"post_install_no_chroot":	true,
+	"pre_install_script":	"preinstall ",
+	"pre_install_interpreter":	1,
 	"packages":	["firefox"]
 }

@@ -65,6 +65,8 @@ int load_file(const char *path) {
     cJSON *post_install_script_item = cJSON_GetObjectItem(root, "post_install_script");
     cJSON *post_install_interpreter_item = cJSON_GetObjectItem(root, "post_install_interpreter");
     cJSON *post_install_no_chroot_item = cJSON_GetObjectItem(root, "post_install_no_chroot");
+    cJSON *pre_install_script_item = cJSON_GetObjectItem(root, "pre_install_script");
+    cJSON *pre_install_interpreter_item = cJSON_GetObjectItem(root, "pre_install_interpreter");
 
     if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
@@ -137,6 +139,13 @@ int load_file(const char *path) {
     if (post_install_no_chroot_item && cJSON_IsBool(post_install_no_chroot_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.post_install.nochroot), packages_nocore_item->valueint);
     }
+    if (pre_install_script_item && pre_install_script_item->valuestring) {
+        GtkTextBuffer *pre_install_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.pre_install.code));
+        gtk_text_buffer_set_text(GTK_TEXT_BUFFER(pre_install_buffer), pre_install_script_item->valuestring, strlen(pre_install_script_item->valuestring));
+    }
+    if (pre_install_interpreter_item && pre_install_interpreter_item->valueint) {
+        gtk_drop_down_set_selected(GTK_DROP_DOWN(options.pre_install.interpreter), pre_install_interpreter_item->valueint);
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -170,11 +179,17 @@ int save_file(const char *path) {
     cJSON_AddStringToObject(root, "additional_options", gtk_text_buffer_get_text(additional_options_buffer, &start, &end, FALSE));
     cJSON_AddBoolToObject(root, "packages_multilib", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.multilib)));
     cJSON_AddBoolToObject(root, "packages_no_core", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.packages.nocore)));
+    // post install
     GtkTextBuffer *post_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.post_install.code));
     gtk_text_buffer_get_bounds(post_install_script_buffer, &start, &end);
     cJSON_AddStringToObject(root, "post_install_script", gtk_text_buffer_get_text(post_install_script_buffer, &start, &end, FALSE));
     cJSON_AddNumberToObject(root, "post_install_interpreter", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.post_install.interpreter)));
     cJSON_AddBoolToObject(root, "post_install_no_chroot", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.post_install.nochroot)));
+    // pre install
+    GtkTextBuffer *pre_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.pre_install.code));
+    gtk_text_buffer_get_bounds(pre_install_script_buffer, &start, &end);
+    cJSON_AddStringToObject(root, "pre_install_script", gtk_text_buffer_get_text(pre_install_script_buffer, &start, &end, FALSE));
+    cJSON_AddNumberToObject(root, "pre_install_interpreter", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.pre_install.interpreter)));
 
     // packages
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));

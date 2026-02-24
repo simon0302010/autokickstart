@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
+#include "glib-object.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -12,6 +13,7 @@
 #include "locale/timezone.h"
 #include "kickstart/packages.h"
 #include "kickstart/scripts.h"
+#include "kickstart/users.h"
 
 GtkWidget *main_window;
 GtkWidget *label;
@@ -230,28 +232,40 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     options.initial_setup = enable_initial_setup;
 
+    // users
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Users and Groups:"), 0, 10, 1, 1);
+
+    GtkWidget *users_groups_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+
+    GtkWidget *users_button = gtk_button_new_with_label("Manage Users");
+    gtk_widget_set_hexpand(users_button, TRUE);
+    g_signal_connect(G_OBJECT(users_button), "clicked", G_CALLBACK(new_users_window), NULL);
+    gtk_box_append(GTK_BOX(users_groups_box), users_button);
+
+    gtk_grid_attach(GTK_GRID(form_grid), users_groups_box, 1, 10, 1, 1);
+
     // packages (TODO)
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Packages:"), 0, 10, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Packages:"), 0, 11, 1, 1);
 
     GtkWidget *packages_button = gtk_button_new_with_label("Manage Packages");
     gtk_widget_set_hexpand(packages_button, TRUE);
     gtk_widget_set_tooltip_text(packages_button, "This describes the software packages to be installed. You can specify packages by environment, group, or by their package names.");
     g_signal_connect(G_OBJECT(packages_button), "clicked", G_CALLBACK(open_package_management), NULL);
-    gtk_grid_attach(GTK_GRID(form_grid), packages_button, 1, 10, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), packages_button, 1, 11, 1, 1);
 
     // what to do after installation
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("After Installation:"), 0, 11, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("After Installation:"), 0, 12, 1, 1);
 
     const char *after_install_options[] = {"Wait for user input", "Poweroff", "Reboot", "Reboot and Eject", "Shutdown", NULL};
     GtkWidget *after_install = gtk_drop_down_new_from_strings(after_install_options);
     gtk_widget_set_hexpand(after_install, TRUE);
     gtk_drop_down_set_selected(GTK_DROP_DOWN(after_install), 4);
-    gtk_grid_attach(GTK_GRID(form_grid), after_install, 1, 11, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), after_install, 1, 12, 1, 1);
 
     options.after_install = after_install;
 
     // post install script
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Scripts:"), 0, 12, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Scripts:"), 0, 13, 1, 1);
 
     GtkWidget *scripts_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 
@@ -267,13 +281,13 @@ static void activate(GtkApplication *app, gpointer user_data) {
     g_signal_connect_swapped(G_OBJECT(post_install_script_btn), "clicked", G_CALLBACK(new_script_window_with_title), GINT_TO_POINTER(POST_INSTALL_SCRIPT));
     gtk_box_append(GTK_BOX(scripts_box), post_install_script_btn);
 
-    gtk_grid_attach(GTK_GRID(form_grid), scripts_box, 1, 12, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), scripts_box, 1, 13, 1, 1);
 
     // additional options
     GtkWidget *additional_options_label = create_label("Additional Options:");
     gtk_widget_set_valign(additional_options_label, GTK_ALIGN_START);
     gtk_widget_set_margin_top(additional_options_label, 8);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 13, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 14, 1, 1);
 
     GtkWidget *additional_options_scroll = gtk_scrolled_window_new();
     gtk_widget_set_size_request(additional_options_scroll, -1, 100);
@@ -282,7 +296,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     GtkWidget *additional_options = gtk_text_view_new();
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(additional_options_scroll), additional_options);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 13, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 14, 1, 1);
 
     options.additional_options = additional_options;
 

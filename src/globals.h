@@ -15,6 +15,19 @@ typedef struct Script {
     GtkWidget *nochroot;
 } Script;
 
+typedef struct User {
+    GtkWidget *name;
+    GtkWidget *gecos;
+    GtkWidget *groups;
+    GtkWidget *lock;
+    GtkWidget *password;
+} User;
+
+typedef struct UserList {
+    User **list;
+    int count;
+} UserList;
+
 typedef struct KickstartOptions {
     char *path;
     GtkWidget *root_enabled;
@@ -36,6 +49,7 @@ typedef struct KickstartOptions {
     Packages packages;
     Script pre_install;
     Script post_install;
+    UserList users;
 } KickstartOptions;
 
 typedef struct OpenedFile {

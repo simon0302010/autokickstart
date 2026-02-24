@@ -1,7 +1,4 @@
-#include "glib-object.h"
-#include "globals.h"
-#include "gtk/gtk.h"
-#include "gtk/gtkshortcut.h"
+#include <gtk/gtk.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +6,8 @@
 #include <sys/time.h>
 #include <stdint.h>
 #include <limits.h>
-#include <gtk/gtk.h>
+
+#include "globals.h"
 
 void seed_rng() {
     struct timeval tp;

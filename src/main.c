@@ -3,7 +3,6 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
-#include "glib-object.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -36,6 +35,7 @@ static void toogle_root_password_entry() {
 static void activate(GtkApplication *app, gpointer user_data) {
     setup_packages_window_items();
     setup_scripts_window_items();
+    setup_users_window_items();
 
     GtkWidget *main_box;
     GtkWidget *scrolled_window;

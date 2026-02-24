@@ -1,7 +1,37 @@
 #include <gtk/gtk.h>
+#include <stdlib.h>
 
 #include "../utils/utils.h"
 #include "../globals.h"
+
+GtkWidget *users_box;
+
+User *create_user() {
+    User *user = malloc(sizeof(User));
+
+    user->box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_widget_set_margin_start(user->box, 5);
+    gtk_widget_set_margin_end(user->box, 5);
+    gtk_widget_set_margin_top(user->box, 5);
+
+    user->name = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(user->name), "Username");
+    gtk_box_append(GTK_BOX(user->box), user->name);
+
+    user->password = gtk_password_entry_new();
+    GParamSpec *pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(user->password), "placeholder-text");
+    if (pspec) {
+        g_object_set(user->password, "placeholder-text", "Password", NULL);
+    }
+    gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(user->password), TRUE);
+
+    gtk_box_append(GTK_BOX(user->box), user->password);
+
+    // adding to main_box
+    gtk_box_append(GTK_BOX(users_box), user->box);
+
+    return user;
+}
 
 void new_users_window() {
     GtkWidget *window = gtk_window_new();
@@ -21,9 +51,6 @@ void new_users_window() {
     gtk_widget_set_halign(users_label, GTK_ALIGN_CENTER);
     gtk_box_append(GTK_BOX(main_box), users_label);
 
-    // users box
-    GtkWidget *users_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
-
     // scrollable box
     GtkWidget *users_box_scroll = gtk_scrolled_window_new();
     gtk_scrolled_window_set_has_frame(GTK_SCROLLED_WINDOW(users_box_scroll), TRUE);
@@ -35,12 +62,16 @@ void new_users_window() {
 
     // add user button
     GtkWidget *add_user_btn = gtk_button_new_with_label("Add User");
+    g_signal_connect_swapped(add_user_btn, "clicked", G_CALLBACK(create_user), NULL);
     gtk_box_append(GTK_BOX(main_box), add_user_btn);
 
     gtk_window_present(GTK_WINDOW(window));
 }
 
 void setup_users_window_items() {
+    users_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 3);
+    g_object_ref(users_box);
+
     options.users.list = NULL;
     options.users.count = 0;
 }

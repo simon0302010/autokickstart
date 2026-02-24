@@ -9,7 +9,6 @@
 #include "globals.h"
 #include "../locale/locales.h"
 #include "../locale/kb.h"
-#include "gtk/gtkdropdown.h"
 #include "locale/timezone.h"
 
 OpenedFile ks_file;

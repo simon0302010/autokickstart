@@ -16,6 +16,7 @@ typedef struct Script {
 } Script;
 
 typedef struct User {
+    GtkWidget *box;
     GtkWidget *name;
     GtkWidget *gecos;
     GtkWidget *groups;

@@ -7,9 +7,6 @@
 #include "../globals.h"
 #include "../utils/utils.h"
 #include "../locale/timezone.h"
-#include "gio/gio.h"
-#include "glib-object.h"
-#include "gtk/gtkdropdown.h"
 
 int load_file(const char *path) {
     char *buffer = NULL;

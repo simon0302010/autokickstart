@@ -1,9 +1,27 @@
 #include <gtk/gtk.h>
 
+#include "scripts.h"
 #include "../utils/utils.h"
 #include "../globals.h"
 
-void new_script_window_with_title(const char *title) {
+void new_script_window_with_title(SCRIPT_WINDOW_TYPE type) {
+    const char *title;
+    GtkWidget *code;
+    GtkWidget *interpreter;
+    GtkWidget *nochroot;
+    if (type == PRE_INSTALL_SCRIPT) {
+        title = "Pre Install Script";
+        code = options.pre_install.code;
+        interpreter = options.pre_install.interpreter;
+    } else if (type == POST_INSTALL_SCRIPT) {
+        title = "Post Install Script";
+        code = options.post_install.code;
+        interpreter = options.post_install.interpreter;
+        nochroot = options.post_install.nochroot;
+    } else {
+        return;
+    }
+
     g_print("Creating scripts window \"%s\"\n", title);
     GtkWidget *window = gtk_window_new();
     gtk_window_set_title(GTK_WINDOW(window), title);
@@ -29,7 +47,7 @@ void new_script_window_with_title(const char *title) {
     gtk_widget_set_hexpand(code_scroll, TRUE);
     gtk_widget_set_vexpand(code_scroll, TRUE);
 
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(code_scroll), options.post_install.code);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(code_scroll), code);
     gtk_grid_attach(GTK_GRID(main_grid), code_scroll, 0, 1, 1, 1);
 
     // options
@@ -43,9 +61,11 @@ void new_script_window_with_title(const char *title) {
     gtk_widget_set_margin_top(options_grid, 10);
 
     gtk_grid_attach(GTK_GRID(options_grid), create_label("Interpreter:"), 0, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(options_grid), options.post_install.interpreter, 1, 0, 1, 1);
-    gtk_grid_attach(GTK_GRID(options_grid), create_label("Chroot:"), 0, 1, 1, 1);
-    gtk_grid_attach(GTK_GRID(options_grid), options.post_install.nochroot, 1, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(options_grid), interpreter, 1, 0, 1, 1);
+    if (type == POST_INSTALL_SCRIPT) {
+        gtk_grid_attach(GTK_GRID(options_grid), create_label("Chroot:"), 0, 1, 1, 1);
+        gtk_grid_attach(GTK_GRID(options_grid), nochroot, 1, 1, 1, 1);
+    }
 
     gtk_grid_attach(GTK_GRID(main_grid), options_grid, 1, 1, 1, 1);
 
@@ -53,14 +73,23 @@ void new_script_window_with_title(const char *title) {
 }
 
 void setup_scripts_window_items() {
+    const char *interpreters[] = {"/usr/bin/sh", "/usr/bin/bash", "/usr/bin/python", NULL};
+
+    // post install script
     options.post_install.code = gtk_text_view_new();
     g_object_ref(options.post_install.code);
 
-    const char *interpreters[] = {"/usr/bin/sh", "/usr/bin/bash", "/usr/bin/python", NULL};
     options.post_install.interpreter = gtk_drop_down_new_from_strings(interpreters);
     g_object_ref(options.post_install.interpreter);
 
     options.post_install.nochroot = gtk_check_button_new_with_label("Disabled");
     gtk_widget_set_tooltip_text(options.post_install.nochroot, "Runs the script outside the chroot environment.");
     g_object_ref(options.post_install.nochroot);
+
+    // pre install script
+    options.pre_install.code = gtk_text_view_new();
+    g_object_ref(options.pre_install.code);
+
+    options.pre_install.interpreter = gtk_drop_down_new_from_strings(interpreters);
+    g_object_ref(options.pre_install.interpreter);
 }

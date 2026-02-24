@@ -120,6 +120,16 @@ char *write_ks_from_options() {
     }
     fprintf(ks_file.file, "%%end\n");
 
+    // pre install script
+    fprintf(ks_file.file, "%%pre");
+    fprintf(ks_file.file, " --interpreter=%s\n", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.pre_install.interpreter)))));
+
+    GtkTextBuffer *pre_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.pre_install.code));
+    gtk_text_buffer_get_bounds(pre_install_script_buffer, &start, &end);
+    fprintf(ks_file.file, "%s\n", gtk_text_buffer_get_text(pre_install_script_buffer, &start, &end, FALSE));
+
+    fprintf(ks_file.file, "%%end\n");
+
     // post install script
     fprintf(ks_file.file, "%%post");
     if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.post_install.nochroot))) {

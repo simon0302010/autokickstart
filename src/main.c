@@ -1,6 +1,4 @@
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
 #include <unistd.h>
@@ -257,10 +255,16 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     GtkWidget *scripts_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
 
+    GtkWidget *pre_install_script_btn = gtk_button_new_with_label("Pre Install");
+    gtk_widget_set_tooltip_text(pre_install_script_btn, "Defines a script that is executed before the installation begins.");
+    gtk_widget_set_hexpand(pre_install_script_btn, TRUE);
+    g_signal_connect_swapped(G_OBJECT(pre_install_script_btn), "clicked", G_CALLBACK(new_script_window_with_title), GINT_TO_POINTER(PRE_INSTALL_SCRIPT));
+    gtk_box_append(GTK_BOX(scripts_box), pre_install_script_btn);
+
     GtkWidget *post_install_script_btn = gtk_button_new_with_label("Post Install");
     gtk_widget_set_tooltip_text(post_install_script_btn, "Defines a script that is executed once the installation is completed.");
     gtk_widget_set_hexpand(post_install_script_btn, TRUE);
-    g_signal_connect_swapped(G_OBJECT(post_install_script_btn), "clicked", G_CALLBACK(new_script_window_with_title), "Post Install Script");
+    g_signal_connect_swapped(G_OBJECT(post_install_script_btn), "clicked", G_CALLBACK(new_script_window_with_title), GINT_TO_POINTER(POST_INSTALL_SCRIPT));
     gtk_box_append(GTK_BOX(scripts_box), post_install_script_btn);
 
     gtk_grid_attach(GTK_GRID(form_grid), scripts_box, 1, 12, 1, 1);

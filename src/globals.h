@@ -34,6 +34,7 @@ typedef struct KickstartOptions {
     GtkWidget *after_install;
     GtkWidget *additional_options;
     Packages packages;
+    Script pre_install;
     Script post_install;
 } KickstartOptions;
 

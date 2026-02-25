@@ -55,6 +55,16 @@ void find_and_remove_user_from_list(User *user) {
     }
 }
 
+void clear_user_list() {
+    for (size_t i = 0; i < options.users.count; i++) {
+        gtk_box_remove(GTK_BOX(users_box), options.users.list[i]->box);
+        free(options.users.list[i]);
+    }
+    options.users.list = NULL;
+    options.users.capacity = 0;
+    options.users.count = 0;
+}
+
 User *add_user_to_list() {
     if (options.users.count == options.users.capacity) {
         size_t new_capacity = options.users.capacity == 0 ? 4 : options.users.capacity * 2;
@@ -69,8 +79,10 @@ User *add_user_to_list() {
     User *user = create_user();
     
     // delete button for user
+    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_widget_set_hexpand(spacer, TRUE);
+    gtk_box_append(GTK_BOX(user->box), spacer);
     GtkWidget *delete_user_btn = gtk_button_new_from_icon_name("user-trash-symbolic");
-    gtk_widget_set_halign(delete_user_btn, GTK_ALIGN_END);
     g_signal_connect_swapped(delete_user_btn, "clicked", G_CALLBACK(find_and_remove_user_from_list), user);
     gtk_box_append(GTK_BOX(user->box), delete_user_btn);
 
@@ -104,10 +116,20 @@ void new_users_window() {
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(users_box_scroll), users_box);
     gtk_box_append(GTK_BOX(main_box), users_box_scroll);
 
-    // add user button
+    // add user button and remove all button
+    GtkWidget *operations_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+
     GtkWidget *add_user_btn = gtk_button_new_with_label("Add User");
+    gtk_widget_set_hexpand(add_user_btn, TRUE);
     g_signal_connect_swapped(add_user_btn, "clicked", G_CALLBACK(add_user_to_list), NULL);
-    gtk_box_append(GTK_BOX(main_box), add_user_btn);
+    gtk_box_append(GTK_BOX(operations_box), add_user_btn);
+
+    GtkWidget *remove_all_btn = gtk_button_new_with_label("Remove All");
+    gtk_widget_set_hexpand(remove_all_btn, TRUE);
+    g_signal_connect_swapped(remove_all_btn, "clicked", G_CALLBACK(clear_user_list), NULL);
+    gtk_box_append(GTK_BOX(operations_box), remove_all_btn);
+
+    gtk_box_append(GTK_BOX(main_box), operations_box);
 
     gtk_window_present(GTK_WINDOW(window));
 }

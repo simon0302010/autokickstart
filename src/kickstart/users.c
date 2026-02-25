@@ -16,10 +16,12 @@ User *create_user() {
     gtk_widget_set_margin_top(user->box, 5);
 
     user->name = gtk_entry_new();
+    gtk_widget_set_tooltip_text(user->name, "Provides the name of the user. This option is required.");
     gtk_entry_set_placeholder_text(GTK_ENTRY(user->name), "Username");
     gtk_box_append(GTK_BOX(user->box), user->name);
 
     user->password = gtk_password_entry_new();
+    gtk_widget_set_tooltip_text(user->password, "The new user’s password. If no password is provided, the account will be locked.");
     GParamSpec *pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(user->password), "placeholder-text");
     if (pspec) {
         g_object_set(user->password, "placeholder-text", "Password", NULL);
@@ -27,6 +29,22 @@ User *create_user() {
     gtk_password_entry_set_show_peek_icon(GTK_PASSWORD_ENTRY(user->password), TRUE);
 
     gtk_box_append(GTK_BOX(user->box), user->password);
+
+    gtk_box_append(GTK_BOX(user->box), create_label("   Groups:"));
+    user->groups = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(user->groups), "group1, group2, group3");
+    gtk_widget_set_tooltip_text(user->groups, "In addition to the default group, a comma separated list of group names the user should belong to. The groups must exist before the user account is created.");
+    gtk_box_append(GTK_BOX(user->box), user->groups);
+
+    gtk_box_append(GTK_BOX(user->box), create_label("   Gecos:"));
+    user->gecos = gtk_entry_new();
+    gtk_widget_set_tooltip_text(user->gecos, "Provides the GECOS information for the user. This is a string of various system-specific fields separated by a comma. It is frequently used to specify the user’s full name, office number, etc. See the passwd(5) man page for more details.");
+    gtk_box_append(GTK_BOX(user->box), user->gecos);
+
+    gtk_box_append(GTK_BOX(user->box), create_label("   Locked:"));
+    user->lock = gtk_check_button_new();
+    gtk_widget_set_tooltip_text(user->lock, "If this option is present, this account is locked by default. This means that the user will not be able to log in from the console.");
+    gtk_box_append(GTK_BOX(user->box), user->lock);
 
     // adding to main_box
     gtk_box_append(GTK_BOX(users_box), user->box);

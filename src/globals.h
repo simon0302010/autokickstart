@@ -17,10 +17,10 @@ typedef struct Script {
 
 typedef struct User {
     GtkWidget *box;
-    GtkWidget *name;
+    GtkWidget *username;
     GtkWidget *gecos;
     GtkWidget *groups;
-    GtkWidget *lock;
+    GtkWidget *locked;
     GtkWidget *password;
 } User;
 

@@ -20,5 +20,12 @@
 	"post_install_no_chroot":	true,
 	"pre_install_script":	"preinstall ",
 	"pre_install_interpreter":	1,
-	"packages":	["firefox"]
+	"packages":	["firefox"],
+	"users":	[{
+			"username":	"user1",
+			"password":	"password1",
+			"groups":	"test, test",
+			"gecos":	"12345",
+			"locked":	true
+		}]
 }

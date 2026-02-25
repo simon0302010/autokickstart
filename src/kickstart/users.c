@@ -15,10 +15,10 @@ User *create_user() {
     gtk_widget_set_margin_end(user->box, 5);
     gtk_widget_set_margin_top(user->box, 5);
 
-    user->name = gtk_entry_new();
-    gtk_widget_set_tooltip_text(user->name, "Provides the name of the user. This option is required.");
-    gtk_entry_set_placeholder_text(GTK_ENTRY(user->name), "Username");
-    gtk_box_append(GTK_BOX(user->box), user->name);
+    user->username = gtk_entry_new();
+    gtk_widget_set_tooltip_text(user->username, "Provides the name of the user. This option is required.");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(user->username), "Username");
+    gtk_box_append(GTK_BOX(user->box), user->username);
 
     user->password = gtk_password_entry_new();
     gtk_widget_set_tooltip_text(user->password, "The new user’s password. If no password is provided, the account will be locked.");
@@ -42,9 +42,9 @@ User *create_user() {
     gtk_box_append(GTK_BOX(user->box), user->gecos);
 
     gtk_box_append(GTK_BOX(user->box), create_label("   Locked:"));
-    user->lock = gtk_check_button_new();
-    gtk_widget_set_tooltip_text(user->lock, "If this option is present, this account is locked by default. This means that the user will not be able to log in from the console.");
-    gtk_box_append(GTK_BOX(user->box), user->lock);
+    user->locked = gtk_check_button_new();
+    gtk_widget_set_tooltip_text(user->locked, "If this option is present, this account is locked by default. This means that the user will not be able to log in from the console.");
+    gtk_box_append(GTK_BOX(user->box), user->locked);
 
     // adding to main_box
     gtk_box_append(GTK_BOX(users_box), user->box);
@@ -95,7 +95,7 @@ User *add_user_to_list() {
     }
 
     User *user = create_user();
-    
+
     // delete button for user
     GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_widget_set_hexpand(spacer, TRUE);

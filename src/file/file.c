@@ -7,6 +7,7 @@
 #include "../globals.h"
 #include "../utils/utils.h"
 #include "../locale/timezone.h"
+#include "../kickstart/users.h"
 
 int load_file(const char *path) {
     char *buffer = NULL;
@@ -64,6 +65,7 @@ int load_file(const char *path) {
     cJSON *post_install_no_chroot_item = cJSON_GetObjectItem(root, "post_install_no_chroot");
     cJSON *pre_install_script_item = cJSON_GetObjectItem(root, "pre_install_script");
     cJSON *pre_install_interpreter_item = cJSON_GetObjectItem(root, "pre_install_interpreter");
+    cJSON *users_item = cJSON_GetObjectItem(root, "users");
 
     if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
@@ -143,6 +145,28 @@ int load_file(const char *path) {
     if (pre_install_interpreter_item && pre_install_interpreter_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.pre_install.interpreter), pre_install_interpreter_item->valueint);
     }
+    if (users_item && cJSON_IsArray(users_item)) {
+        clear_user_list();
+        int array_size = cJSON_GetArraySize(users_item);
+        for (int i = 0; i < array_size; i++) {
+            cJSON *user_obj = cJSON_GetArrayItem(users_item, i);
+            if (user_obj && cJSON_IsObject(user_obj)) {
+                cJSON *username = cJSON_GetObjectItem(user_obj, "username");
+                cJSON *password = cJSON_GetObjectItem(user_obj, "password");
+                cJSON *groups = cJSON_GetObjectItem(user_obj, "groups");
+                cJSON *gecos = cJSON_GetObjectItem(user_obj, "gecos");
+                cJSON *locked = cJSON_GetObjectItem(user_obj, "locked");
+
+                User *user = add_user_to_list();
+
+                gtk_editable_set_text(GTK_EDITABLE(user->username), (username && username->valuestring) ? username->valuestring : "");
+                gtk_editable_set_text(GTK_EDITABLE(user->password), (password && password->valuestring) ? password->valuestring : "");
+                gtk_editable_set_text(GTK_EDITABLE(user->groups), (groups && groups->valuestring) ? groups->valuestring : "");
+                gtk_editable_set_text(GTK_EDITABLE(user->gecos), (gecos && gecos->valuestring) ? gecos->valuestring : "");
+                gtk_check_button_set_active(GTK_CHECK_BUTTON(user->locked), (locked->valueint && cJSON_IsBool(locked)) ? locked->valueint : FALSE);
+            }
+        }
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -198,6 +222,19 @@ int save_file(const char *path) {
     }
     cJSON *packages = cJSON_CreateStringArray(packages_list, packages_count);
     cJSON_AddItemToObject(root, "packages", packages);
+
+    // users
+    cJSON *users_array = cJSON_CreateArray();
+    for (size_t i = 0; i < options.users.count; i++) {
+        cJSON *user = cJSON_CreateObject();
+        cJSON_AddStringToObject(user, "username", gtk_editable_get_text(GTK_EDITABLE(options.users.list[i]->username)));
+        cJSON_AddStringToObject(user, "password", gtk_editable_get_text(GTK_EDITABLE(options.users.list[i]->password)));
+        cJSON_AddStringToObject(user, "groups", gtk_editable_get_text(GTK_EDITABLE(options.users.list[i]->groups)));
+        cJSON_AddStringToObject(user, "gecos", gtk_editable_get_text(GTK_EDITABLE(options.users.list[i]->gecos)));
+        cJSON_AddBoolToObject(user, "locked", gtk_check_button_get_active(GTK_CHECK_BUTTON(options.users.list[i]->locked)));
+        cJSON_AddItemToArray(users_array, user);
+    }
+    cJSON_AddItemToObject(root, "users", users_array);
 
     char *json_str = cJSON_Print(root);
     cJSON_Delete(root);

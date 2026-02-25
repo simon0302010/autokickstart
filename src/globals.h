@@ -26,7 +26,8 @@ typedef struct User {
 
 typedef struct UserList {
     User **list;
-    int count;
+    size_t count;
+    size_t capacity;
 } UserList;
 
 typedef struct KickstartOptions {

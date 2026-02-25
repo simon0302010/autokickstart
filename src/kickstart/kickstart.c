@@ -142,6 +142,23 @@ char *write_ks_from_options() {
 
     fprintf(ks_file.file, "%%end\n");
 
+    // users (TODO: remember to check if username is empty)
+    for (size_t i = 0; i < options.users.count; i++) {
+        User *user = options.users.list[i];
+        const char *username = gtk_editable_get_text(GTK_EDITABLE(user->username));
+        if (strcmp(username, "") == 0) {
+            g_print("username field is missing");
+            continue;
+        }
+
+        fprintf(
+            ks_file.file,
+            "user --name=%s --password=%s\n",
+            username,
+            gtk_editable_get_text(GTK_EDITABLE(user->password))
+        );
+    }
+
     if (ks_file.file != NULL) {
         fclose(ks_file.file);
     }

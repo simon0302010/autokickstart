@@ -146,27 +146,38 @@ char *write_ks_from_options() {
     for (size_t i = 0; i < options.users.count; i++) {
         User *user = options.users.list[i];
         const char *username = gtk_editable_get_text(GTK_EDITABLE(user->username));
+
         if (strcmp(username, "") == 0) {
             g_print("username field is empty\n");
             continue;
         }
 
-        fprintf(
-            ks_file.file,
-            "user --name=%s --password=%s",
-            username,
-            gtk_editable_get_text(GTK_EDITABLE(user->password))
-        );
-
+        const char *password = gtk_editable_get_text(GTK_EDITABLE(user->password));
         const char *groups = gtk_editable_get_text(GTK_EDITABLE(user->groups));
         const char *gecos = gtk_editable_get_text(GTK_EDITABLE(user->gecos));
         bool locked = gtk_check_button_get_active(GTK_CHECK_BUTTON(user->locked));
 
+        char username_esc[strlen(username) * 2 + 1];
+        char password_esc[strlen(password) * 2 + 1];
+        char groups_esc[strlen(groups) * 2 + 1];
+        char gecos_esc[strlen(gecos) * 2 + 1];
+
+        escape_quotes(username, username_esc);
+        escape_quotes(password, password_esc);
+        escape_quotes(groups, groups_esc);
+        escape_quotes(gecos, gecos_esc);
+
+        fprintf(
+            ks_file.file,
+            "user --name=\"%s\" --password=\"%s\"",
+            username_esc, password_esc
+        );
+
         if (strcmp(groups, "") != 0) {
-            fprintf(ks_file.file, " --groups=\"%s\"", groups);
+            fprintf(ks_file.file, " --groups=\"%s\"", groups_esc);
         }
         if (strcmp(gecos, "") != 0) {
-            fprintf(ks_file.file, " --gecos=\"%s\"", gecos);
+            fprintf(ks_file.file, " --gecos=\"%s\"", gecos_esc);
         }
         if (locked) {
             fprintf(ks_file.file, " --lock");

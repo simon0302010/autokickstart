@@ -11,5 +11,6 @@ void get_selected_clearpart(char *dest);
 int set_selected_clearpart(const char *option);
 GtkWidget *create_label(const char *text);
 bool is_fedora();
+void escape_quotes(const char *src, char *dest);
 
 #endif

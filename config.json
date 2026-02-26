@@ -22,7 +22,7 @@
 	"pre_install_interpreter":	1,
 	"packages":	["firefox"],
 	"users":	[{
-			"username":	"\" teaasdaslkda \" \"\"\"\"\"",
+			"username":	"adad\" teaasdaslkda \" \"\"\"\"\"ssadasd",
 			"password":	"\"test     \"    \"",
 			"groups":	"test, test",
 			"gecos":	"12345",

@@ -89,3 +89,20 @@ bool is_fedora() {
     fclose(os_release);
     return false;
 }
+
+// escapes quotes in a string. ensure dest has enough space.
+void escape_quotes(const char *src, char *dest) {
+    size_t i;
+    for (i = 0;; i++) {
+        if (src[i] == '\0') {
+            dest[i] = '\0';
+            break;
+        } else if (src[i] == '"') {
+            dest[i] = '\\';
+            dest[i+1] = '"';
+            i++;
+        } else {
+            dest[i] = src[i];
+        }
+    }
+}

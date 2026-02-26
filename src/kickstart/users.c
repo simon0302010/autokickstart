@@ -147,6 +147,11 @@ void new_users_window() {
     g_signal_connect_swapped(remove_all_btn, "clicked", G_CALLBACK(clear_user_list), NULL);
     gtk_box_append(GTK_BOX(operations_box), remove_all_btn);
 
+    GtkWidget *close_btn = gtk_button_new_with_label("Finish");
+    gtk_widget_set_hexpand(close_btn, TRUE);
+    g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_close), window);
+    gtk_box_append(GTK_BOX(operations_box), close_btn);
+
     gtk_box_append(GTK_BOX(main_box), operations_box);
 
     gtk_window_present(GTK_WINDOW(window));

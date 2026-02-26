@@ -22,7 +22,6 @@ void new_script_window_with_title(SCRIPT_WINDOW_TYPE type) {
         return;
     }
 
-    g_print("Creating scripts window \"%s\"\n", title);
     GtkWidget *window = gtk_window_new();
     gtk_window_set_title(GTK_WINDOW(window), title);
     gtk_window_set_default_size(GTK_WINDOW(window), 400, 500);
@@ -55,6 +54,8 @@ void new_script_window_with_title(SCRIPT_WINDOW_TYPE type) {
     gtk_widget_set_halign(options_label, GTK_ALIGN_CENTER);
     gtk_grid_attach(GTK_GRID(main_grid), options_label, 1, 0, 1, 1);
 
+    GtkWidget *options_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
     GtkWidget *options_grid = gtk_grid_new();
     gtk_grid_set_row_spacing(GTK_GRID(options_grid), 8);
     gtk_grid_set_column_spacing(GTK_GRID(options_grid), 10);
@@ -67,7 +68,17 @@ void new_script_window_with_title(SCRIPT_WINDOW_TYPE type) {
         gtk_grid_attach(GTK_GRID(options_grid), nochroot, 1, 1, 1, 1);
     }
 
-    gtk_grid_attach(GTK_GRID(main_grid), options_grid, 1, 1, 1, 1);
+
+    GtkWidget *vspacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *close_btn = gtk_button_new_with_label("Finish");
+    g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_close), window);
+    gtk_widget_set_vexpand(vspacer, TRUE);
+
+    gtk_box_append(GTK_BOX(options_box), options_grid);
+    gtk_box_append(GTK_BOX(options_box), vspacer);
+    gtk_box_append(GTK_BOX(options_box), close_btn);
+
+    gtk_grid_attach(GTK_GRID(main_grid), options_box, 1, 1, 1, 1);
 
     gtk_window_present(GTK_WINDOW(window));
 }

@@ -16,6 +16,9 @@
 #include "../globals.h"
 #include "../utils/utils.h"
 #include "gio/gio.h"
+#include "glib-object.h"
+
+GtkWidget *window;
 
 static void create_model() {
     g_list_store_append(options.packages.packages, gtk_string_object_new("Test 1"));
@@ -197,6 +200,12 @@ static void listvfl_layout_init (ListvflLayout *self) {
 
     self->main_grid = main_grid;
 
+    GtkWidget *vspacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
+    GtkWidget *close_btn = gtk_button_new_with_label("Finish");
+    g_signal_connect_swapped(close_btn, "clicked", G_CALLBACK(gtk_window_close), window);
+
+    gtk_widget_set_vexpand(vspacer, TRUE);
     gtk_widget_set_hexpand(self->scrolledwindow, TRUE);
     gtk_widget_set_vexpand(self->scrolledwindow, TRUE);
 
@@ -208,6 +217,8 @@ static void listvfl_layout_init (ListvflLayout *self) {
     gtk_box_append(GTK_BOX(right_box), self->btnadd);
     gtk_box_append(GTK_BOX(right_box), options.packages.multilib);
     gtk_box_append(GTK_BOX(right_box), options.packages.nocore);
+    gtk_box_append(GTK_BOX(right_box), vspacer);
+    gtk_box_append(GTK_BOX(right_box), close_btn);
 
     gtk_grid_attach(GTK_GRID(main_grid), right_box, 1, 1, 1, 1);
     
@@ -216,7 +227,6 @@ static void listvfl_layout_init (ListvflLayout *self) {
 
 void open_package_management(GtkWidget *open_management_button, gpointer user_data) 
 {
-    GtkWidget *window;
     GtkWidget *box, *listvfllayout;
 
     window = gtk_window_new();

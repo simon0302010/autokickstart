@@ -147,16 +147,32 @@ char *write_ks_from_options() {
         User *user = options.users.list[i];
         const char *username = gtk_editable_get_text(GTK_EDITABLE(user->username));
         if (strcmp(username, "") == 0) {
-            g_print("username field is missing");
+            g_print("username field is empty\n");
             continue;
         }
 
         fprintf(
             ks_file.file,
-            "user --name=%s --password=%s\n",
+            "user --name=%s --password=%s",
             username,
             gtk_editable_get_text(GTK_EDITABLE(user->password))
         );
+
+        const char *groups = gtk_editable_get_text(GTK_EDITABLE(user->groups));
+        const char *gecos = gtk_editable_get_text(GTK_EDITABLE(user->gecos));
+        bool locked = gtk_check_button_get_active(GTK_CHECK_BUTTON(user->locked));
+
+        if (strcmp(groups, "") != 0) {
+            fprintf(ks_file.file, " --groups=\"%s\"", groups);
+        }
+        if (strcmp(gecos, "") != 0) {
+            fprintf(ks_file.file, " --gecos=\"%s\"", gecos);
+        }
+        if (locked) {
+            fprintf(ks_file.file, " --lock");
+        }
+
+        fprintf(ks_file.file, "\n");
     }
 
     if (ks_file.file != NULL) {

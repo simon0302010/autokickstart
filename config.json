@@ -22,8 +22,8 @@
 	"pre_install_interpreter":	1,
 	"packages":	["firefox"],
 	"users":	[{
-			"username":	"user1",
-			"password":	"password1",
+			"username":	"\" teaasdaslkda \" \"\"\"\"\"",
+			"password":	"\"test     \"    \"",
 			"groups":	"test, test",
 			"gecos":	"12345",
 			"locked":	true

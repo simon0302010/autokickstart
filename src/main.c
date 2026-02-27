@@ -22,6 +22,7 @@ static void build_iso() {
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
     free(ks_path);
+    download_packages_from_options();
 }
 
 static void toogle_root_password_entry() {

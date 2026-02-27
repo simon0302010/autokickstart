@@ -9,6 +9,13 @@
 
 #include "globals.h"
 
+typedef struct {
+    bool value;
+    bool checked;
+} CheckedValue;
+
+CheckedValue fedora = {.value = false, .checked = false};
+
 void seed_rng() {
     struct timeval tp;
     gettimeofday(&tp, NULL);
@@ -72,9 +79,13 @@ GtkWidget *create_label(const char *text) {
 }
 
 bool is_fedora() {
+    if (fedora.checked)
+        return fedora.value;
+
     FILE *os_release = fopen("/etc/os-release", "r");
 
     if (os_release == NULL) {
+        fedora = (CheckedValue){.value = false, .checked = true};
         return false;
     }
 
@@ -82,11 +93,13 @@ bool is_fedora() {
     while (fscanf(os_release, "%49s", string) == 1) {
         if (strcasestr(string, "fedora")) {
             fclose(os_release);
+            fedora = (CheckedValue){.value = true, .checked = true};
             return true;
         }
     }
 
     fclose(os_release);
+    fedora = (CheckedValue){.value = false, .checked = true};
     return false;
 }
 

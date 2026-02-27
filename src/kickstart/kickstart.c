@@ -6,6 +6,7 @@
 
 #include "kickstart.h"
 #include "../utils/utils.h"
+#include "glib.h"
 #include "globals.h"
 #include "../locale/locales.h"
 #include "../locale/kb.h"
@@ -191,4 +192,20 @@ char *write_ks_from_options() {
     }
 
     return ks_file.path;
+}
+
+int download_packages_from_options() {
+    GString *packages_str = g_string_new("");
+    
+    guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
+    for (guint i = 0; i < packages_count; i++) {
+        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
+        g_string_append_printf(packages_str, " %s", gtk_string_object_get_string(pkg));
+        g_object_unref(pkg);
+    }
+
+    g_print("%s", packages_str->str);
+    g_string_free(packages_str, TRUE);
+
+    return 0;
 }

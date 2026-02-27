@@ -3,6 +3,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
+#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -293,11 +294,22 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     options.disk_label = disk_label;
 
+    // architecture
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Architecture:"), 0, 15, 1, 1);
+
+    const char *archs[] = {"x86_64", "aarch64", "ppc64le", "s390x", NULL};
+    GtkWidget *architecture = gtk_drop_down_new_from_strings(archs);
+    gtk_widget_set_hexpand(architecture, TRUE);
+    gtk_widget_set_sensitive(architecture, FALSE);
+    gtk_widget_set_tooltip_text(architecture, "Selects the target architecture for the installation.");
+    gtk_grid_attach(GTK_GRID(form_grid), architecture, 1, 15, 1, 1);
+    options.arch = architecture;
+
     // additional options
     GtkWidget *additional_options_label = create_label("Additional Options:");
     gtk_widget_set_valign(additional_options_label, GTK_ALIGN_START);
     gtk_widget_set_margin_top(additional_options_label, 8);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 15, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 16, 1, 1);
 
     GtkWidget *additional_options_scroll = gtk_scrolled_window_new();
     gtk_widget_set_size_request(additional_options_scroll, -1, 100);
@@ -306,7 +318,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     GtkWidget *additional_options = gtk_text_view_new();
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(additional_options_scroll), additional_options);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 15, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 16, 1, 1);
 
     options.additional_options = additional_options;
 

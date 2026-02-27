@@ -2,7 +2,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <linux/limits.h>
 #include <gtk/gtk.h>
+#include <unistd.h>
 
 #include "kickstart.h"
 #include "../utils/utils.h"
@@ -10,9 +12,23 @@
 #include "globals.h"
 #include "../locale/locales.h"
 #include "../locale/kb.h"
+#include "gtk/gtkdropdown.h"
 #include "locale/timezone.h"
 
+char pkg_temp[PATH_MAX];
 OpenedFile ks_file;
+
+const char *get_pkg_temp_folder() {
+    if (pkg_temp[0] != '\0') return pkg_temp;
+
+    if (getcwd(pkg_temp, sizeof(pkg_temp)) == NULL) return NULL;
+
+    char *folder_name = rand_str(20);
+    snprintf(pkg_temp, sizeof(pkg_temp), "/AUTOKS_%s", folder_name);
+    free(folder_name);
+
+    return pkg_temp;
+}
 
 OpenedFile create_temp_ks() {
     OpenedFile open_file;
@@ -194,9 +210,23 @@ char *write_ks_from_options() {
     return ks_file.path;
 }
 
+// TODO: fetch fedora version
 int download_packages_from_options() {
+    const char *pkg_dir = get_pkg_temp_folder();
+
     GString *packages_str = g_string_new("");
-    
+
+    char *dnf_base_cmd = NULL;
+    asprintf(
+        &dnf_base_cmd,
+        "dnf install --downloadonly --installroot=%s --use-host-config --releasever=43 --forcearch=%s --setopt=keepcache=True -y",
+        pkg_dir,
+        gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.arch))))
+    );
+
+    g_string_append(packages_str, dnf_base_cmd);
+    g_string_append(packages_str, " @core");
+
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
     for (guint i = 0; i < packages_count; i++) {
         GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
@@ -206,6 +236,7 @@ int download_packages_from_options() {
 
     g_print("%s", packages_str->str);
     g_string_free(packages_str, TRUE);
+    free(dnf_base_cmd);
 
     return 0;
 }

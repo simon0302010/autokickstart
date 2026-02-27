@@ -20,6 +20,7 @@
 	"post_install_no_chroot":	true,
 	"pre_install_script":	"preinstall ",
 	"pre_install_interpreter":	1,
+	"disk_label":	"Test-Label",
 	"packages":	["firefox"],
 	"users":	[{
 			"username":	"\"test\\\"",

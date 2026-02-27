@@ -283,11 +283,20 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     gtk_grid_attach(GTK_GRID(form_grid), scripts_box, 1, 13, 1, 1);
 
+    // disk label
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("Disk Label:"), 0, 14, 1, 1);
+
+    GtkWidget *disk_label = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(disk_label), "Fedora-Autokickstart");
+    gtk_grid_attach(GTK_GRID(form_grid), disk_label, 1, 14, 1, 1);
+
+    options.disk_label = disk_label;
+
     // additional options
     GtkWidget *additional_options_label = create_label("Additional Options:");
     gtk_widget_set_valign(additional_options_label, GTK_ALIGN_START);
     gtk_widget_set_margin_top(additional_options_label, 8);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 14, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_label, 0, 15, 1, 1);
 
     GtkWidget *additional_options_scroll = gtk_scrolled_window_new();
     gtk_widget_set_size_request(additional_options_scroll, -1, 100);
@@ -296,7 +305,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     GtkWidget *additional_options = gtk_text_view_new();
     gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(additional_options_scroll), additional_options);
-    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 14, 1, 1);
+    gtk_grid_attach(GTK_GRID(form_grid), additional_options_scroll, 1, 15, 1, 1);
 
     options.additional_options = additional_options;
 

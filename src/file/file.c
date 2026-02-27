@@ -66,6 +66,7 @@ int load_file(const char *path) {
     cJSON *pre_install_script_item = cJSON_GetObjectItem(root, "pre_install_script");
     cJSON *pre_install_interpreter_item = cJSON_GetObjectItem(root, "pre_install_interpreter");
     cJSON *users_item = cJSON_GetObjectItem(root, "users");
+    cJSON *disk_label_item = cJSON_GetObjectItem(root, "disk_label");
 
     if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
@@ -102,6 +103,9 @@ int load_file(const char *path) {
     }
     if (timezone_item && timezone_item->valuestring) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.timezone), get_timezone_idx(timezone_item->valuestring, "UTC"));
+    }
+    if (disk_label_item && disk_label_item->valuestring) {
+        gtk_editable_set_text(GTK_EDITABLE(options.disk_label), disk_label_item->valuestring);
     }
     if (after_install_item && after_install_item->valueint) {
         gtk_drop_down_set_selected(GTK_DROP_DOWN(options.after_install), after_install_item->valueint);
@@ -211,6 +215,7 @@ int save_file(const char *path) {
     gtk_text_buffer_get_bounds(pre_install_script_buffer, &start, &end);
     cJSON_AddStringToObject(root, "pre_install_script", gtk_text_buffer_get_text(pre_install_script_buffer, &start, &end, FALSE));
     cJSON_AddNumberToObject(root, "pre_install_interpreter", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.pre_install.interpreter)));
+    cJSON_AddStringToObject(root, "disk_label", gtk_editable_get_text(GTK_EDITABLE(options.disk_label)));
 
     // packages
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));

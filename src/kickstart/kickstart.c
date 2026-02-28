@@ -35,6 +35,10 @@ const char *get_temp_dir() {
     strncat(temp_dir, folder_name, PATH_MAX - strlen(temp_dir) - 1);
     free(folder_name);
 
+    if (mkdir(temp_dir, 0777) != 0) {
+        perror("mkdir");
+    }
+
     return temp_dir;
 }
 
@@ -255,13 +259,25 @@ char *write_ks_from_options() {
 int download_packages_from_options() {
     //if (!is_fedora()) return 2;
 
+    if (mkdir(get_pkg_dir(), 0755) != 0 && errno != EEXIST) {
+        perror("mkdir pkg_dir");
+        return 1;
+    }
+    if (mkdir(get_dnf_dir(), 0755) != 0 && errno != EEXIST) {
+        perror("mkdir dnf_dir");
+        return 1;
+    }
+
+    g_print("pkg dir: %s", get_pkg_dir());
+    g_print("dnf dir: %s", get_dnf_dir());
+
     GString *packages_str = g_string_new("");
 
     char *dnf_base_cmd = NULL;
     asprintf(
         &dnf_base_cmd,
         "dnf install --downloadonly --installroot=%s --use-host-config --releasever=43 --forcearch=%s --setopt=keepcache=True -y",
-        get_pkg_dir(),
+        get_dnf_dir(),
         gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.arch))))
     );
 
@@ -269,17 +285,38 @@ int download_packages_from_options() {
     g_string_append(packages_str, " @core");
 
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
-    if (packages_count > 0) {
-        for (guint i = 0; i < packages_count; i++) {
-            GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
-            g_string_append_printf(packages_str, " %s", gtk_string_object_get_string(pkg));
-            g_object_unref(pkg);
-        }
-
-        g_print("%s\n", packages_str->str);
-    } else {
-        g_print("no packages to download\n");
+    for (guint i = 0; i < packages_count; i++) {
+        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
+        g_string_append_printf(packages_str, " %s", gtk_string_object_get_string(pkg));
+        g_object_unref(pkg);
     }
+
+    // TODO: improve error handling
+
+    if (system(packages_str->str) != 0) {
+        perror("system");
+    }
+
+    char *cpy_pkg_cmd = NULL;
+    asprintf(&cpy_pkg_cmd, "find \"%s\" -type f -name '*.rpm' -exec cp -n -t \"%s\" {} +", get_dnf_dir(), get_pkg_dir());
+    if (system(cpy_pkg_cmd) != 0) {
+        perror("system");
+    }
+    free(cpy_pkg_cmd);
+
+    char *cpy_comps_cmd = NULL;
+    asprintf(&cpy_comps_cmd, "find /var/cache/libdnf5 /var/cache/dnf -path \"*/fedora-*/*-comps-*.xml.zst\" -exec zstd -d {} -o \"%s/comps.xml\" \\;", get_temp_dir());
+    if (system(cpy_comps_cmd) != 0) {
+        perror("system");
+    }
+    free(cpy_comps_cmd);
+
+    char *createrepo_c_cmd = NULL;
+    asprintf(&createrepo_c_cmd, "createrepo_c -g \"%s/comps.xml\" \"%s/\"", get_temp_dir(), get_pkg_dir());
+    if (system(createrepo_c_cmd) != 0) {
+        perror("system");
+    }
+    free(createrepo_c_cmd);
 
     g_string_free(packages_str, TRUE);
     free(dnf_base_cmd);

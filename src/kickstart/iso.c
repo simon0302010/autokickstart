@@ -10,6 +10,7 @@
 #include "utils/utils.h"
 
 #define MAX_VERSIONS 64
+#define FEDORA_RELEASES_URL "https://fedoraproject.org/releases.json"
 
 const char *fedora_versions[64];
 const char *fedora_architectures[64];
@@ -74,7 +75,7 @@ const char **get_fedora_versions() {
     if (fedora_versions[0] != NULL) return fedora_versions;
 
     if (fedora_releases == NULL) {
-        const char url[] = "https://fedoraproject.org/releases.json";
+        const char url[] = FEDORA_RELEASES_URL;
         struct CURLResponse res = GetHTML(url);
         fedora_releases = res.html;
     }
@@ -114,7 +115,7 @@ const char **get_fedora_architectures() {
     if (fedora_architectures[0] != NULL) return fedora_architectures;
 
     if (fedora_releases == NULL) {
-        const char url[] = "https://fedoraproject.org/releases.json";
+        const char url[] = FEDORA_RELEASES_URL;
         struct CURLResponse res = GetHTML(url);
         fedora_releases = res.html;
     }
@@ -152,7 +153,7 @@ const char **get_fedora_architectures() {
 
 char *find_fedora_iso() {
     if (fedora_releases == NULL) {
-        const char url[] = "https://fedoraproject.org/releases.json";
+        const char url[] = FEDORA_RELEASES_URL;
         struct CURLResponse res = GetHTML(url);
         fedora_releases = res.html;
     }

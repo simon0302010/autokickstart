@@ -3,8 +3,6 @@
 
 #include "globals.h"
 
-extern const unsigned int FEDORA_VERSION;
-
 int clean_temp_dir();
 OpenedFile create_temp_ks();
 char *write_ks_from_options();

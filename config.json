@@ -22,7 +22,7 @@
 	"pre_install_interpreter":	1,
 	"disk_label":	"Test-Label",
 	"version":	"42",
-	"arch":	"x86_64",
+	"arch":	"ppc64le",
 	"packages":	["firefox"],
 	"users":	[{
 			"username":	"\"test\\\"",

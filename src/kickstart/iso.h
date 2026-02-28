@@ -3,5 +3,6 @@
 
 const char **get_fedora_versions();
 const char **get_fedora_architectures();
+char *find_fedora_iso();
 
 #endif

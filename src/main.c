@@ -4,6 +4,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
+#include "glib.h"
 #include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
@@ -25,6 +26,9 @@ static void build_iso() {
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
     free(ks_path);
+    char *iso_link = find_fedora_iso();
+    g_print("found suitable iso at: %s\n", iso_link);
+    free(iso_link);
     //download_packages_from_options();
     //clean_temp_dir();
 }

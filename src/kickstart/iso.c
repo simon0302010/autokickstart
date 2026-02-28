@@ -5,7 +5,9 @@
 #include <string.h>
 
 #include "cJSON/cJSON.h"
-#include "glib.h"
+#include "globals.h"
+#include "gtk/gtkdropdown.h"
+#include "utils/utils.h"
 
 #define MAX_VERSIONS 64
 
@@ -91,9 +93,6 @@ const char **get_fedora_versions() {
         cJSON *releases_entry = cJSON_GetArrayItem(root, i);
         if (releases_entry && cJSON_IsObject(releases_entry)) {
             cJSON *rel_version = cJSON_GetObjectItem(releases_entry, "version");
-            cJSON *rel_arch = cJSON_GetObjectItem(releases_entry, "arch");
-            cJSON *rel_link = cJSON_GetObjectItem(releases_entry, "link");
-            cJSON *rel_variant = cJSON_GetObjectItem(releases_entry, "variant");
 
             if (rel_version && cJSON_IsString(rel_version)) {
                 if (!in_str_array(fedora_versions, rel_version->valuestring)) {
@@ -133,10 +132,7 @@ const char **get_fedora_architectures() {
     for (int i = 0; i < architectures_count; i++) {
         cJSON *releases_entry = cJSON_GetArrayItem(root, i);
         if (releases_entry && cJSON_IsObject(releases_entry)) {
-            cJSON *rel_version = cJSON_GetObjectItem(releases_entry, "version");
             cJSON *rel_arch = cJSON_GetObjectItem(releases_entry, "arch");
-            cJSON *rel_link = cJSON_GetObjectItem(releases_entry, "link");
-            cJSON *rel_variant = cJSON_GetObjectItem(releases_entry, "variant");
 
             if (rel_arch && cJSON_IsString(rel_arch)) {
                 if (!in_str_array(fedora_architectures, rel_arch->valuestring)) {
@@ -152,4 +148,47 @@ const char **get_fedora_architectures() {
     g_print("found %i architectures\n", arch_idx);
 
     return fedora_architectures;
+}
+
+char *find_fedora_iso() {
+    if (fedora_releases == NULL) {
+        const char url[] = "https://fedoraproject.org/releases.json";
+        struct CURLResponse res = GetHTML(url);
+        fedora_releases = res.html;
+    }
+
+    cJSON *root = cJSON_Parse(fedora_releases);
+    if (!root || !cJSON_IsArray(root)) {
+        cJSON_Delete(root);
+        return NULL;
+    }
+
+    int releases_count = cJSON_GetArraySize(root);
+    for (int i = 0; i < releases_count; i++) {
+        cJSON *releases_entry = cJSON_GetArrayItem(root, i);
+        if (releases_entry && cJSON_IsObject(releases_entry)) {
+            cJSON *rel_version = cJSON_GetObjectItem(releases_entry, "version");
+            cJSON *rel_arch = cJSON_GetObjectItem(releases_entry, "arch");
+            cJSON *rel_link = cJSON_GetObjectItem(releases_entry, "link");
+            cJSON *rel_variant = cJSON_GetObjectItem(releases_entry, "variant");
+
+            if (
+                rel_version && cJSON_IsString(rel_version) && strcmp(rel_version->valuestring, gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.fedora_version))))) == 0
+                && rel_arch && cJSON_IsString(rel_arch) && strcmp(rel_arch->valuestring, gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.arch))))) == 0
+                && rel_link && cJSON_IsString(rel_link)
+                && rel_variant && cJSON_IsString(rel_variant) && strcmp(rel_variant->valuestring, "Everything") == 0
+            ) {
+                char *link = strdup(rel_link->valuestring);
+                cJSON_Delete(root);
+                return link;
+            }
+        }
+    }
+
+    cJSON_Delete(root);
+
+    g_print("failed to find suitable iso image\n");
+    show_alert(main_window, "Failed to find suitable ISO image");
+
+    return NULL;
 }

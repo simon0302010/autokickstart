@@ -17,8 +17,6 @@
 #include "locale/kb.h"
 #include "locale/timezone.h"
 
-const unsigned int FEDORA_VERSION = 43;
-
 char pkg_dir[PATH_MAX];
 char dnf_dir[PATH_MAX];
 char temp_dir[PATH_MAX];
@@ -260,7 +258,6 @@ char *write_ks_from_options() {
     return ks_file.path;
 }
 
-// TODO: fetch fedora version
 int download_packages_from_options() {
     if (!is_fedora()) return 2;
 
@@ -281,9 +278,9 @@ int download_packages_from_options() {
     char *dnf_base_cmd = NULL;
     asprintf(
         &dnf_base_cmd,
-        "dnf install --downloadonly --installroot=%s --use-host-config --releasever=%u --forcearch=%s --setopt=keepcache=True -y",
+        "dnf install --downloadonly --installroot=%s --use-host-config --releasever=%s --forcearch=%s --setopt=keepcache=True -y",
         get_dnf_dir(),
-        FEDORA_VERSION,
+        gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.fedora_version)))),
         gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.arch))))
     );
 

@@ -21,6 +21,8 @@
 	"pre_install_script":	"preinstall ",
 	"pre_install_interpreter":	1,
 	"disk_label":	"Test-Label",
+	"version":	"42",
+	"arch":	"x86_64",
 	"packages":	["firefox"],
 	"users":	[{
 			"username":	"\"test\\\"",

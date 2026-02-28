@@ -4,7 +4,10 @@
 #include <string.h>
 
 #include "cJSON/cJSON.h"
+#include "gio/gio.h"
+#include "glib-object.h"
 #include "globals.h"
+#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 #include "locale/timezone.h"
 #include "kickstart/users.h"
@@ -67,6 +70,8 @@ int load_file(const char *path) {
     cJSON *pre_install_interpreter_item = cJSON_GetObjectItem(root, "pre_install_interpreter");
     cJSON *users_item = cJSON_GetObjectItem(root, "users");
     cJSON *disk_label_item = cJSON_GetObjectItem(root, "disk_label");
+    cJSON *version_item = cJSON_GetObjectItem(root, "version");
+    cJSON *arch_item = cJSON_GetObjectItem(root, "arch");
 
     if (root_enabled_item && cJSON_IsBool(root_enabled_item)) {
         gtk_check_button_set_active(GTK_CHECK_BUTTON(options.root_enabled), cJSON_IsTrue(root_enabled_item));
@@ -171,6 +176,32 @@ int load_file(const char *path) {
             }
         }
     }
+    if (version_item && version_item->valuestring) {
+        GtkDropDown *dropdown = GTK_DROP_DOWN(options.fedora_version);
+        GListModel *model = gtk_drop_down_get_model(dropdown);
+
+        guint n_items = g_list_model_get_n_items(model);
+        for (guint i = 0; i < n_items; i++) {
+            gpointer item = g_list_model_get_item(model, i);
+            if (GTK_IS_STRING_OBJECT(item) && strcmp(version_item->valuestring, gtk_string_object_get_string(GTK_STRING_OBJECT(item))) == 0) {
+                gtk_drop_down_set_selected(dropdown, i);
+            }
+            g_object_unref(item);
+        }
+    }
+    if (arch_item && arch_item->valuestring) {
+        GtkDropDown *dropdown = GTK_DROP_DOWN(options.arch);
+        GListModel *model = gtk_drop_down_get_model(dropdown);
+
+        guint n_items = g_list_model_get_n_items(model);
+        for (guint i = 0; i < n_items; i++) {
+            gpointer item = g_list_model_get_item(model, i);
+            if (GTK_IS_STRING_OBJECT(item) && strcmp(arch_item->valuestring, gtk_string_object_get_string(GTK_STRING_OBJECT(item))) == 0) {
+                gtk_drop_down_set_selected(dropdown, i);
+            }
+            g_object_unref(item);
+        }
+    }
 
     cJSON_Delete(root);
     return 0;
@@ -216,6 +247,8 @@ int save_file(const char *path) {
     cJSON_AddStringToObject(root, "pre_install_script", gtk_text_buffer_get_text(pre_install_script_buffer, &start, &end, FALSE));
     cJSON_AddNumberToObject(root, "pre_install_interpreter", gtk_drop_down_get_selected(GTK_DROP_DOWN(options.pre_install.interpreter)));
     cJSON_AddStringToObject(root, "disk_label", gtk_editable_get_text(GTK_EDITABLE(options.disk_label)));
+    cJSON_AddStringToObject(root, "version", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.fedora_version)))));
+    cJSON_AddStringToObject(root, "arch", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.arch)))));
 
     // packages
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));

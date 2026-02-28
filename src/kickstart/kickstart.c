@@ -19,6 +19,8 @@
 #include "gtk/gtkdropdown.h"
 #include "locale/timezone.h"
 
+const unsigned int FEDORA_VERSION = 43;
+
 char pkg_dir[PATH_MAX];
 char dnf_dir[PATH_MAX];
 char temp_dir[PATH_MAX];
@@ -181,29 +183,6 @@ char *write_ks_from_options() {
     }
     fprintf(ks_file.file, "%%end\n");
 
-    // pre install script
-    fprintf(ks_file.file, "%%pre");
-    fprintf(ks_file.file, " --interpreter=%s\n", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.pre_install.interpreter)))));
-
-    GtkTextBuffer *pre_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.pre_install.code));
-    gtk_text_buffer_get_bounds(pre_install_script_buffer, &start, &end);
-    fprintf(ks_file.file, "%s\n", gtk_text_buffer_get_text(pre_install_script_buffer, &start, &end, FALSE));
-
-    fprintf(ks_file.file, "%%end\n");
-
-    // post install script
-    fprintf(ks_file.file, "%%post");
-    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.post_install.nochroot))) {
-        fprintf(ks_file.file, " --nochroot");
-    }
-    fprintf(ks_file.file, " --interpreter=%s\n", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.post_install.interpreter)))));
-
-    GtkTextBuffer *post_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.post_install.code));
-    gtk_text_buffer_get_bounds(post_install_script_buffer, &start, &end);
-    fprintf(ks_file.file, "%s\n", gtk_text_buffer_get_text(post_install_script_buffer, &start, &end, FALSE));
-
-    fprintf(ks_file.file, "%%end\n");
-
     // users (TODO: remember to check if username is empty)
     for (size_t i = 0; i < options.users.count; i++) {
         User *user = options.users.list[i];
@@ -248,6 +227,34 @@ char *write_ks_from_options() {
         fprintf(ks_file.file, "\n");
     }
 
+    // configuring local repo
+    const char *disk_label = gtk_editable_get_text(GTK_EDITABLE(options.disk_label));
+    fprintf(ks_file.file, "harddrive --partition=LABEL=%s --dir=/packages/\n", (disk_label && strlen(disk_label) > 0) ? disk_label : "Fedora-Autokickstart");
+    fprintf(ks_file.file, "repo --name=local-packages --baseurl=file:///run/install/repo/packages/\n");
+
+    // pre install script
+    fprintf(ks_file.file, "%%pre");
+    fprintf(ks_file.file, " --interpreter=%s\n", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.pre_install.interpreter)))));
+
+    GtkTextBuffer *pre_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.pre_install.code));
+    gtk_text_buffer_get_bounds(pre_install_script_buffer, &start, &end);
+    fprintf(ks_file.file, "%s\n", gtk_text_buffer_get_text(pre_install_script_buffer, &start, &end, FALSE));
+
+    fprintf(ks_file.file, "%%end\n");
+
+    // post install script
+    fprintf(ks_file.file, "%%post");
+    if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.post_install.nochroot))) {
+        fprintf(ks_file.file, " --nochroot");
+    }
+    fprintf(ks_file.file, " --interpreter=%s\n", gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.post_install.interpreter)))));
+
+    GtkTextBuffer *post_install_script_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(options.post_install.code));
+    gtk_text_buffer_get_bounds(post_install_script_buffer, &start, &end);
+    fprintf(ks_file.file, "%s\n", gtk_text_buffer_get_text(post_install_script_buffer, &start, &end, FALSE));
+
+    fprintf(ks_file.file, "%%end\n");
+
     if (ks_file.file != NULL) {
         fclose(ks_file.file);
     }
@@ -257,7 +264,7 @@ char *write_ks_from_options() {
 
 // TODO: fetch fedora version
 int download_packages_from_options() {
-    //if (!is_fedora()) return 2;
+    if (!is_fedora()) return 2;
 
     if (mkdir(get_pkg_dir(), 0755) != 0 && errno != EEXIST) {
         perror("mkdir pkg_dir");
@@ -276,8 +283,9 @@ int download_packages_from_options() {
     char *dnf_base_cmd = NULL;
     asprintf(
         &dnf_base_cmd,
-        "dnf install --downloadonly --installroot=%s --use-host-config --releasever=43 --forcearch=%s --setopt=keepcache=True -y",
+        "dnf install --downloadonly --installroot=%s --use-host-config --releasever=%u --forcearch=%s --setopt=keepcache=True -y",
         get_dnf_dir(),
+        FEDORA_VERSION,
         gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.arch))))
     );
 
@@ -305,7 +313,7 @@ int download_packages_from_options() {
     free(cpy_pkg_cmd);
 
     char *cpy_comps_cmd = NULL;
-    asprintf(&cpy_comps_cmd, "find /var/cache/libdnf5 /var/cache/dnf -path \"*/fedora-*/*-comps-*.xml.zst\" -exec zstd -d {} -o \"%s/comps.xml\" \\;", get_temp_dir());
+    asprintf(&cpy_comps_cmd, "find /var/cache/libdnf5 /var/cache/dnf -path \"*/fedora-*/*-comps-*.xml.zst\" -exec zstd -d -f {} -o \"%s/comps.xml\" \\;", get_temp_dir());
     if (system(cpy_comps_cmd) != 0) {
         perror("system");
     }
@@ -323,3 +331,4 @@ int download_packages_from_options() {
 
     return 0;
 }
+

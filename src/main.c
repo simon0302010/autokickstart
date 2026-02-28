@@ -1,9 +1,9 @@
+#include <curl/curl.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
 #include <unistd.h>
 
-#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -14,6 +14,7 @@
 #include "kickstart/packages.h"
 #include "kickstart/scripts.h"
 #include "kickstart/users.h"
+#include "kickstart/iso.h"
 
 GtkWidget *main_window;
 GtkWidget *label;
@@ -23,8 +24,9 @@ static void build_iso() {
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
     free(ks_path);
-    download_packages_from_options();
-    clean_temp_dir();
+    get_fedora_versions();
+    //download_packages_from_options();
+    //clean_temp_dir();
 }
 
 static void toogle_root_password_entry() {
@@ -349,6 +351,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
 int main(int argc, char **argv) {
     seed_rng();
+    curl_global_init(CURL_GLOBAL_ALL);
 
     GtkApplication *app;
     int status;
@@ -364,6 +367,8 @@ int main(int argc, char **argv) {
     if (options.path != NULL) {
         g_free(options.path);
     }
+
+    curl_global_cleanup();
 
     return status;
 }

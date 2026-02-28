@@ -4,6 +4,7 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 
+#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 #include "locale/locales.h"
 #include "locale/kb.h"
@@ -24,7 +25,6 @@ static void build_iso() {
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
     free(ks_path);
-    get_fedora_versions();
     //download_packages_from_options();
     //clean_temp_dir();
 }
@@ -297,16 +297,33 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     options.disk_label = disk_label;
 
-    // architecture
-    gtk_grid_attach(GTK_GRID(form_grid), create_label("Architecture:"), 0, 15, 1, 1);
+    // fedora version and architecture
+    gtk_grid_attach(GTK_GRID(form_grid), create_label("ISO Options:"), 0, 15, 1, 1);
+
+    GtkWidget *iso_options_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+
+    gtk_box_append(GTK_BOX(iso_options_box), create_label("Fedora Version:"));
+
+    const char **fedora_versions = get_fedora_versions();
+    GtkWidget *fedora_version = gtk_drop_down_new_from_strings(fedora_versions);
+    gtk_widget_set_hexpand(fedora_version, TRUE);
+    gtk_widget_set_tooltip_text(fedora_version, "Selects the Fedora version to use for the ISO.");
+    gtk_box_append(GTK_BOX(iso_options_box), fedora_version);
+
+    options.fedora_version = fedora_version;
+
+    gtk_box_append(GTK_BOX(iso_options_box), create_label("    Architecture:"));
 
     const char *archs[] = {"x86_64", "aarch64", "ppc64le", "s390x", NULL};
     GtkWidget *architecture = gtk_drop_down_new_from_strings(archs);
     gtk_widget_set_hexpand(architecture, TRUE);
     gtk_widget_set_sensitive(architecture, FALSE);
     gtk_widget_set_tooltip_text(architecture, "Selects the target architecture for the installation.");
-    gtk_grid_attach(GTK_GRID(form_grid), architecture, 1, 15, 1, 1);
+    gtk_box_append(GTK_BOX(iso_options_box), architecture);
+
     options.arch = architecture;
+
+    gtk_grid_attach(GTK_GRID(form_grid), iso_options_box, 1, 15, 1, 1);
 
     // additional options
     GtkWidget *additional_options_label = create_label("Additional Options:");

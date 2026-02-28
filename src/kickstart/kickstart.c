@@ -11,12 +11,10 @@
 #include <ftw.h>
 
 #include "kickstart.h"
-#include "../utils/utils.h"
-#include "glib.h"
+#include "utils/utils.h"
 #include "globals.h"
-#include "../locale/locales.h"
-#include "../locale/kb.h"
-#include "gtk/gtkdropdown.h"
+#include "locale/locales.h"
+#include "locale/kb.h"
 #include "locale/timezone.h"
 
 const unsigned int FEDORA_VERSION = 43;

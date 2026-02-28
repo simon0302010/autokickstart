@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../cJSON/cJSON.h"
-#include "../globals.h"
-#include "../utils/utils.h"
-#include "../locale/timezone.h"
-#include "../kickstart/users.h"
+#include "cJSON/cJSON.h"
+#include "globals.h"
+#include "utils/utils.h"
+#include "locale/timezone.h"
+#include "kickstart/users.h"
 
 int load_file(const char *path) {
     char *buffer = NULL;

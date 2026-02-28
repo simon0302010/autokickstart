@@ -50,6 +50,7 @@ typedef struct KickstartOptions {
     GtkWidget *disk_label;
     GtkWidget *additional_options;
     GtkWidget *arch;
+    GtkWidget *fedora_version;
     Packages packages;
     Script pre_install;
     Script post_install;

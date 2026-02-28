@@ -13,10 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../globals.h"
-#include "../utils/utils.h"
-#include "gio/gio.h"
-#include "glib-object.h"
+#include "globals.h"
+#include "utils/utils.h"
 
 GtkWidget *window;
 

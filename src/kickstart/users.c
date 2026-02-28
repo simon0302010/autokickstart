@@ -1,9 +1,8 @@
 #include <gtk/gtk.h>
 #include <stdlib.h>
 
-#include "../utils/utils.h"
-#include "../globals.h"
-#include "glib-object.h"
+#include "utils/utils.h"
+#include "globals.h"
 
 GtkWidget *users_box;
 

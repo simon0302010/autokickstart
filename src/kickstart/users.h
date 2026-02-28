@@ -1,7 +1,7 @@
 #ifndef USERS_H
 #define USERS_H
 
-#include "../globals.h"
+#include "globals.h"
 
 void new_users_window();
 void setup_users_window_items();

@@ -1,8 +1,8 @@
 #include <gtk/gtk.h>
 
 #include "scripts.h"
-#include "../utils/utils.h"
-#include "../globals.h"
+#include "utils/utils.h"
+#include "globals.h"
 
 void new_script_window_with_title(SCRIPT_WINDOW_TYPE type) {
     const char *title;

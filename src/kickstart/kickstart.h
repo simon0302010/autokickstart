@@ -1,7 +1,7 @@
 #ifndef KICKSTART_H
 #define KICKSTART_H
 
-#include "../globals.h"
+#include "globals.h"
 
 extern const unsigned int FEDORA_VERSION;
 

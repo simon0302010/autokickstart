@@ -118,7 +118,7 @@ static void add(GtkWidget *btnadd, gpointer listvfllayout) {
     buffer = gtk_entry_get_buffer(GTK_ENTRY(widget->entry));
     text = gtk_entry_buffer_get_text(buffer);
     if (strlen(text) > 0) {
-        if (!is_fedora() || pkg_exists(text)) {
+        if (!is_fedora() || pkg_exists(text) || text[0] == '@') {
             GListModel *store = gtk_single_selection_get_model(widget->selection);
             g_list_store_append(G_LIST_STORE(store), gtk_string_object_new(text));
         } else {

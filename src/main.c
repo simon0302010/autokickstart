@@ -24,6 +24,7 @@ static void build_iso() {
     g_print("wrote kickstart file to %s\n", ks_path);
     free(ks_path);
     download_packages_from_options();
+    clean_temp_dir();
 }
 
 static void toogle_root_password_entry() {

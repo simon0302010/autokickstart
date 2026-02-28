@@ -1,3 +1,6 @@
+#define _GNU_SOURCE
+#define _XOPEN_SOURCE 500
+
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -5,6 +8,7 @@
 #include <linux/limits.h>
 #include <gtk/gtk.h>
 #include <unistd.h>
+#include <ftw.h>
 
 #include "kickstart.h"
 #include "../utils/utils.h"
@@ -15,19 +19,56 @@
 #include "gtk/gtkdropdown.h"
 #include "locale/timezone.h"
 
-char pkg_temp[PATH_MAX];
+char pkg_dir[PATH_MAX];
+char dnf_dir[PATH_MAX];
+char temp_dir[PATH_MAX];
 OpenedFile ks_file;
 
-const char *get_pkg_temp_folder() {
-    if (pkg_temp[0] != '\0') return pkg_temp;
+const char *get_temp_dir() {
+    if (temp_dir[0] != '\0') return temp_dir;
 
-    if (getcwd(pkg_temp, sizeof(pkg_temp)) == NULL) return NULL;
+    if (getcwd(temp_dir, sizeof(temp_dir)) == NULL) return NULL;
 
     char *folder_name = rand_str(20);
-    snprintf(pkg_temp, sizeof(pkg_temp), "/AUTOKS_%s", folder_name);
+    if (!folder_name) return NULL;
+    strncat(temp_dir, "/AUTOKS_", PATH_MAX - strlen(temp_dir) - 2);
+    strncat(temp_dir, folder_name, PATH_MAX - strlen(temp_dir) - 1);
     free(folder_name);
 
-    return pkg_temp;
+    return temp_dir;
+}
+
+const char *get_pkg_dir() {
+    if (pkg_dir[0] != '\0') return pkg_dir;
+    snprintf(pkg_dir, sizeof(pkg_dir), "%s/pkg", get_temp_dir());
+    return pkg_dir;
+}
+
+const char *get_dnf_dir() {
+    if (dnf_dir[0] != '\0') return dnf_dir;
+    snprintf(dnf_dir, sizeof(dnf_dir), "%s/dnf", get_temp_dir());
+    return dnf_dir;
+}
+
+static int remove_file(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+    if (remove(fpath) == -1) {
+        perror("remove");
+        return 1;
+    }
+    return 0;
+}
+
+int clean_temp_dir() {
+    if (temp_dir[0] == '\0') return 1;
+    
+    if (nftw(temp_dir, remove_file, 64, FTW_DEPTH | FTW_PHYS) == -1) {
+        perror("nftw");
+    }
+    
+    memset(temp_dir, '\0', sizeof(temp_dir));
+    memset(pkg_dir, '\0', sizeof(pkg_dir));
+    memset(dnf_dir, '\0', sizeof(dnf_dir));
+    return 0;
 }
 
 OpenedFile create_temp_ks() {
@@ -212,7 +253,7 @@ char *write_ks_from_options() {
 
 // TODO: fetch fedora version
 int download_packages_from_options() {
-    const char *pkg_dir = get_pkg_temp_folder();
+    //if (!is_fedora()) return 2;
 
     GString *packages_str = g_string_new("");
 
@@ -220,7 +261,7 @@ int download_packages_from_options() {
     asprintf(
         &dnf_base_cmd,
         "dnf install --downloadonly --installroot=%s --use-host-config --releasever=43 --forcearch=%s --setopt=keepcache=True -y",
-        pkg_dir,
+        get_pkg_dir(),
         gtk_string_object_get_string(GTK_STRING_OBJECT(gtk_drop_down_get_selected_item(GTK_DROP_DOWN(options.arch))))
     );
 
@@ -228,13 +269,18 @@ int download_packages_from_options() {
     g_string_append(packages_str, " @core");
 
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
-    for (guint i = 0; i < packages_count; i++) {
-        GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
-        g_string_append_printf(packages_str, " %s", gtk_string_object_get_string(pkg));
-        g_object_unref(pkg);
+    if (packages_count > 0) {
+        for (guint i = 0; i < packages_count; i++) {
+            GtkStringObject *pkg = GTK_STRING_OBJECT(g_list_model_get_item(G_LIST_MODEL(options.packages.packages), i));
+            g_string_append_printf(packages_str, " %s", gtk_string_object_get_string(pkg));
+            g_object_unref(pkg);
+        }
+
+        g_print("%s\n", packages_str->str);
+    } else {
+        g_print("no packages to download\n");
     }
 
-    g_print("%s", packages_str->str);
     g_string_free(packages_str, TRUE);
     free(dnf_base_cmd);
 

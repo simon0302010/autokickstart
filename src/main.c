@@ -314,10 +314,9 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     gtk_box_append(GTK_BOX(iso_options_box), create_label("    Architecture:"));
 
-    const char *archs[] = {"x86_64", "aarch64", "ppc64le", "s390x", NULL};
+    const char **archs = get_fedora_architectures();
     GtkWidget *architecture = gtk_drop_down_new_from_strings(archs);
     gtk_widget_set_hexpand(architecture, TRUE);
-    gtk_widget_set_sensitive(architecture, FALSE);
     gtk_widget_set_tooltip_text(architecture, "Selects the target architecture for the installation.");
     gtk_box_append(GTK_BOX(iso_options_box), architecture);
 

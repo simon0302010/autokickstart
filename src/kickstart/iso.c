@@ -5,10 +5,12 @@
 #include <string.h>
 
 #include "cJSON/cJSON.h"
+#include "glib.h"
 
 #define MAX_VERSIONS 64
 
 const char *fedora_versions[64];
+const char *fedora_architectures[64];
 char *fedora_releases = NULL;
 
 struct CURLResponse {
@@ -84,7 +86,6 @@ const char **get_fedora_versions() {
     }
 
     int versions_count = cJSON_GetArraySize(root);
-    g_print("found %i versions\n", versions_count);
     unsigned int version_idx = 0;
     for (int i = 0; i < versions_count; i++) {
         cJSON *releases_entry = cJSON_GetArrayItem(root, i);
@@ -105,9 +106,50 @@ const char **get_fedora_versions() {
     fedora_versions[version_idx] = NULL;
     cJSON_Delete(root);
 
-    for (int i = 0; fedora_versions[i] != NULL; i++) {
-        g_print("%s\n", fedora_versions[i]);
-    }
+    g_print("found %i versions\n", version_idx);
 
     return fedora_versions;
+}
+
+const char **get_fedora_architectures() {
+    if (fedora_architectures[0] != NULL) return fedora_architectures;
+
+    if (fedora_releases == NULL) {
+        const char url[] = "https://fedoraproject.org/releases.json";
+        struct CURLResponse res = GetHTML(url);
+        fedora_releases = res.html;
+    }
+
+    cJSON *root = cJSON_Parse(fedora_releases);
+    if (!root || !cJSON_IsArray(root)) {
+        cJSON_Delete(root);
+        fedora_architectures[0] = strdup("x86_64");
+        fedora_architectures[1] = NULL;
+        return fedora_architectures;
+    }
+
+    int architectures_count = cJSON_GetArraySize(root);
+    unsigned int arch_idx = 0;
+    for (int i = 0; i < architectures_count; i++) {
+        cJSON *releases_entry = cJSON_GetArrayItem(root, i);
+        if (releases_entry && cJSON_IsObject(releases_entry)) {
+            cJSON *rel_version = cJSON_GetObjectItem(releases_entry, "version");
+            cJSON *rel_arch = cJSON_GetObjectItem(releases_entry, "arch");
+            cJSON *rel_link = cJSON_GetObjectItem(releases_entry, "link");
+            cJSON *rel_variant = cJSON_GetObjectItem(releases_entry, "variant");
+
+            if (rel_arch && cJSON_IsString(rel_arch)) {
+                if (!in_str_array(fedora_architectures, rel_arch->valuestring)) {
+                    fedora_architectures[arch_idx] = strdup(rel_arch->valuestring);
+                    arch_idx++;
+                }
+            }
+        }
+    }
+    fedora_architectures[arch_idx] = NULL;
+    cJSON_Delete(root);
+
+    g_print("found %i architectures\n", arch_idx);
+
+    return fedora_architectures;
 }

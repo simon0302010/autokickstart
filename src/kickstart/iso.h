@@ -2,5 +2,6 @@
 #define ISO_H
 
 const char **get_fedora_versions();
+const char **get_fedora_architectures();
 
 #endif

@@ -38,19 +38,26 @@ static void build_iso(GCancellable *cancel) {
 
     CHECK_CANCELLED(cancel);
     char *iso_link = find_fedora_iso();
-    g_idle_add_once((GSourceOnceFunc)gtk_progress_bar_set_text, GTK_PROGRESS_BAR(progress));
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Downloading ISO");
     g_print("downloading suitable iso from: %s\n", iso_link);
 
     CHECK_CANCELLED(cancel);
     char *iso_path = download_iso(iso_link);
     free(iso_link);
+    if (iso_path == NULL) {
+        g_print("failed to download ISO\n");
+        show_alert(main_window, "Failed to download ISO. The build has been aborted.");
+        free(ks_path);
+        build_running = false;
+        return;
+    }
     g_print("saved downloaded iso to %s\n", iso_path);
 
     CHECK_CANCELLED(cancel);
     int pkg_code = download_packages_from_options();
     if (pkg_code != 0) {
         g_print("failed to download packages (code %d)\n", pkg_code);
-        g_idle_add_once((GSourceOnceFunc)show_alert, main_window);
+        show_alert(main_window, "Failed to download required packages. The ISO build has been aborted.");
         free(ks_path);
         free(iso_path);
         build_running = false;

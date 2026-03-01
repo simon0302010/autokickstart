@@ -46,7 +46,6 @@ static void build_iso(GCancellable *cancel) {
     char *iso_path = download_iso(iso_link);
     free(iso_link);
     g_print("saved downloaded iso to %s\n", iso_path);
-    free(iso_path);
 
     CHECK_CANCELLED(cancel);
     int pkg_code = download_packages_from_options();
@@ -59,6 +58,7 @@ static void build_iso(GCancellable *cancel) {
 
     CHECK_CANCELLED(cancel);
     int create_iso_code = create_iso(ks_path, iso_path, "Output.iso");
+    free(iso_path);
 
     gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Finished");
 

@@ -27,8 +27,11 @@ static void build_iso() {
     g_print("wrote kickstart file to %s\n", ks_path);
     free(ks_path);
     char *iso_link = find_fedora_iso();
-    g_print("found suitable iso at: %s\n", iso_link);
+    g_print("downloading suitable iso from: %s\n", iso_link);
+    char *iso_path = download_iso(iso_link);
     free(iso_link);
+    g_print("saved downloaded iso to %s\n", iso_path);
+    free(iso_path);
     //download_packages_from_options();
     //clean_temp_dir();
 }
@@ -219,7 +222,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_widget_set_tooltip_text(bootloader_location_dropdown, "Specifies where the boot record is written. The None option does not install the GRUB bootloader.");
     gtk_box_append(GTK_BOX(bootloader_box), bootloader_location_dropdown);
 
-    gtk_box_append(GTK_BOX(bootloader_box), create_label("Options:"));
+    gtk_box_append(GTK_BOX(bootloader_box), create_label("    Options:"));
 
     GtkWidget *bootloader_options = gtk_entry_new();
     gtk_widget_set_hexpand(bootloader_options, TRUE);
@@ -383,6 +386,7 @@ int main(int argc, char **argv) {
     g_list_store_remove_all(options.packages.packages);
 
     free_timezones();
+    free_fedora_releases();
 
     if (options.path != NULL) {
         g_free(options.path);

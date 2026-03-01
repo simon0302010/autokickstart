@@ -6,7 +6,6 @@
 
 #include "cJSON/cJSON.h"
 #include "globals.h"
-#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 
 #define MAX_VERSIONS 64
@@ -50,7 +49,10 @@ static struct CURLResponse GetHTML(const char * url) {
     CURLcode ret = curl_easy_perform(curl);
     
     if (ret != CURLE_OK) {
-        g_print("CURL error: %s\n", curl_easy_strerror(ret));
+        char curl_error[256];
+        sprintf(curl_error, "Failed to get %s: %s\n", url, curl_easy_strerror(ret));
+        g_print("%s", curl_error);
+        show_alert(main_window, curl_error);
     }
 
     //long response_code = 0;
@@ -192,4 +194,78 @@ char *find_fedora_iso() {
     show_alert(main_window, "Failed to find suitable ISO image");
 
     return NULL;
+}
+
+static size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    size_t written = fwrite(ptr, size, nmemb, stream);
+    return written;
+}
+
+static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
+                             curl_off_t ultotal, curl_off_t ulnow) {
+    if (dltotal != 0) {
+        double percentage = (double)dlnow / dltotal * 100.0;
+        static double last_percentage = 0;
+        if (percentage - last_percentage >= 1.0 || dlnow == dltotal) {
+            g_print("download progress: %.1f%% (%ld/%ld bytes)\n",
+                    percentage, dlnow, dltotal);
+            last_percentage = percentage;
+        }
+    }
+    return 0;
+}
+
+int download_file(const char *url, const char *dest) {
+    CURL *curl;
+    FILE *fp;
+    CURLcode res;
+    curl = curl_easy_init();
+    if (curl) {
+        fp = fopen(dest, "wb");
+        if (!fp) {
+            curl_easy_cleanup(curl);
+            return 1;
+        }
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+        curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 0L);  // No timeout for large files
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 300L);  // 5 min connection timeout
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_LIMIT, 1024L);  // 1KB/s minimum
+        curl_easy_setopt(curl, CURLOPT_LOW_SPEED_TIME, 300L);  // Allow 5 min at low speed
+        
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        fclose(fp);
+        
+        if (res != CURLE_OK) {
+            g_print("download failed: %s\n", curl_easy_strerror(res));
+            remove(dest);  // Delete incomplete file
+            return 1;
+        }
+    } else {
+        return 1;
+    }
+    return 0;
+}
+
+void free_fedora_releases() {
+    if (fedora_releases) {
+        free(fedora_releases);
+        fedora_releases = NULL;
+    }
+
+    for (int i = 0; fedora_versions[i] != NULL; i++) {
+        free((char*)fedora_versions[i]);
+    }
+    fedora_versions[0] = NULL;
+
+    for (int i = 0; fedora_architectures[i] != NULL; i++) {
+        free((char*)fedora_architectures[i]);
+    }
+    fedora_architectures[0] = NULL;
 }

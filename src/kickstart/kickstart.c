@@ -16,6 +16,7 @@
 #include "locale/locales.h"
 #include "locale/kb.h"
 #include "locale/timezone.h"
+#include "kickstart/iso.h"
 
 char pkg_dir[PATH_MAX];
 char dnf_dir[PATH_MAX];
@@ -43,12 +44,14 @@ const char *get_temp_dir() {
 const char *get_pkg_dir() {
     if (pkg_dir[0] != '\0') return pkg_dir;
     snprintf(pkg_dir, sizeof(pkg_dir), "%s/pkg", get_temp_dir());
+    mkdir(pkg_dir, 0777);
     return pkg_dir;
 }
 
 const char *get_dnf_dir() {
     if (dnf_dir[0] != '\0') return dnf_dir;
     snprintf(dnf_dir, sizeof(dnf_dir), "%s/dnf", get_temp_dir());
+    mkdir(dnf_dir, 0777);
     return dnf_dir;
 }
 
@@ -327,3 +330,16 @@ int download_packages_from_options() {
     return 0;
 }
 
+char *download_iso(const char *url) {
+    char *filename = rand_str(20);
+    char *dest = NULL;
+    asprintf(&dest, "%s/%s.iso", get_temp_dir(), filename);
+    free(filename);
+
+    if (download_file(url, dest) != 0) {
+        free(dest);
+        return NULL;
+    }
+
+    return dest;
+}

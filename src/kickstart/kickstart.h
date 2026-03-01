@@ -8,5 +8,6 @@ OpenedFile create_temp_ks();
 char *write_ks_from_options();
 int download_packages_from_options();
 char *download_iso(const char *url);
+const char *get_pkg_dir();
 
 #endif

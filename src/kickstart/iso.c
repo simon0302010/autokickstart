@@ -6,6 +6,7 @@
 
 #include "cJSON/cJSON.h"
 #include "globals.h"
+#include "kickstart/kickstart.h"
 #include "utils/utils.h"
 
 #define MAX_VERSIONS 64
@@ -268,4 +269,26 @@ void free_fedora_releases() {
         free((char*)fedora_architectures[i]);
     }
     fedora_architectures[0] = NULL;
+}
+
+int create_iso(const char *ks_path, const char *input_iso, const char *output_iso) {
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Building ISO Image");
+
+    const char *disk_label = gtk_editable_get_text(GTK_EDITABLE(options.disk_label));
+
+    char *create_iso_cmd = NULL;
+    asprintf(
+        &create_iso_cmd,
+        "pkexec mkksiso --ks \"%s\" --add \"%s/\" -V \"%s\" \"%s\" \"%s\"",
+        ks_path,
+        get_pkg_dir(),
+        (disk_label && strlen(disk_label) > 0) ? disk_label : "Fedora-Autokickstart",
+        input_iso,
+        output_iso
+    );
+    int ret = system(create_iso_cmd);
+    free(create_iso_cmd);
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0);
+    return ret;
 }

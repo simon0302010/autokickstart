@@ -264,6 +264,9 @@ char *write_ks_from_options() {
 int download_packages_from_options() {
     if (!is_fedora()) return 2;
 
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Downloading packages");
+
     if (mkdir(get_pkg_dir(), 0755) != 0 && errno != EEXIST) {
         perror("mkdir pkg_dir");
         return 1;
@@ -303,6 +306,8 @@ int download_packages_from_options() {
         perror("system");
     }
 
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0);
+
     char *cpy_pkg_cmd = NULL;
     asprintf(&cpy_pkg_cmd, "find \"%s\" -type f -name '*.rpm' -exec cp -n -t \"%s\" {} +", get_dnf_dir(), get_pkg_dir());
     if (system(cpy_pkg_cmd) != 0) {
@@ -316,6 +321,8 @@ int download_packages_from_options() {
         perror("system");
     }
     free(cpy_comps_cmd);
+
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Creating local repository");
 
     char *createrepo_c_cmd = NULL;
     asprintf(&createrepo_c_cmd, "createrepo_c -g \"%s/comps.xml\" \"%s/\"", get_temp_dir(), get_pkg_dir());

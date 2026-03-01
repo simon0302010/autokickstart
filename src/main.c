@@ -35,11 +35,10 @@ static void build_iso(GCancellable *cancel) {
     CHECK_CANCELLED(cancel);
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
-    free(ks_path);
 
     CHECK_CANCELLED(cancel);
     char *iso_link = find_fedora_iso();
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Downloading ISO");
+    g_idle_add_once((GSourceOnceFunc)gtk_progress_bar_set_text, GTK_PROGRESS_BAR(progress));
     g_print("downloading suitable iso from: %s\n", iso_link);
 
     CHECK_CANCELLED(cancel);
@@ -51,16 +50,26 @@ static void build_iso(GCancellable *cancel) {
     int pkg_code = download_packages_from_options();
     if (pkg_code != 0) {
         g_print("failed to download packages (code %d)\n", pkg_code);
-        show_alert(main_window, "Failed to download required packages. The ISO build has been aborted.");
+        g_idle_add_once((GSourceOnceFunc)show_alert, main_window);
+        free(ks_path);
+        free(iso_path);
         build_running = false;
         return;
     }
 
     CHECK_CANCELLED(cancel);
     int create_iso_code = create_iso(ks_path, iso_path, "Output.iso");
+    
     free(iso_path);
+    free(ks_path);
 
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Finished");
+    if (create_iso_code != 0) {
+        g_print("failed to create ISO (code %d)\n", create_iso_code);
+        build_running = false;
+        return;
+    }
+
+    g_idle_add_once((GSourceOnceFunc)gtk_progress_bar_set_text, GTK_PROGRESS_BAR(progress));
 
     build_running = false;
 }

@@ -201,14 +201,14 @@ static size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     return written;
 }
 
-static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
-                             curl_off_t ultotal, curl_off_t ulnow) {
+static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow) {
     if (dltotal != 0) {
         double percentage = (double)dlnow / dltotal * 100.0;
         static double last_percentage = 0;
         if (percentage - last_percentage >= 1.0 || dlnow == dltotal) {
             g_print("download progress: %.1f%% (%ld/%ld bytes)\n",
                     percentage, dlnow, dltotal);
+            gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), percentage / 100.0);
             last_percentage = percentage;
         }
     }

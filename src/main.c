@@ -20,20 +20,53 @@
 
 GtkWidget *main_window;
 GtkWidget *label;
+GtkWidget *progress;
 KickstartOptions options;
 
-static void build_iso() {
+bool build_running = false;
+
+static GCancellable *build_cancellable = NULL;
+
+#define CHECK_CANCELLED(ctx) if (g_cancellable_is_cancelled(ctx)) { g_print("build cancelled\n"); return; }
+
+static void build_iso(GCancellable *cancel) {
+    build_running = true;
+
+    CHECK_CANCELLED(cancel);
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
     free(ks_path);
+
+    CHECK_CANCELLED(cancel);
     char *iso_link = find_fedora_iso();
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Downloading ISO");
     g_print("downloading suitable iso from: %s\n", iso_link);
+
+    CHECK_CANCELLED(cancel);
     char *iso_path = download_iso(iso_link);
     free(iso_link);
     g_print("saved downloaded iso to %s\n", iso_path);
     free(iso_path);
-    //download_packages_from_options();
-    //clean_temp_dir();
+
+    build_running = false;
+}
+
+static gpointer build_iso_thread(gpointer data) {
+    build_iso(G_CANCELLABLE(data));
+    g_object_unref(data);
+    return NULL;
+}
+
+static void build_iso_clicked() {
+    if (build_running) {
+        show_alert(main_window, "Build process is already running. Please wait until the current step is completed to stop the build process.");
+        return;
+    }
+
+    if (build_cancellable) { g_cancellable_cancel(build_cancellable); g_object_unref(build_cancellable); }
+    build_cancellable = g_cancellable_new();
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
+    g_thread_new("build-iso", build_iso_thread, g_object_ref(build_cancellable));
 }
 
 static void toogle_root_password_entry() {
@@ -348,6 +381,15 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     options.additional_options = additional_options;
 
+    // progress bar
+    progress = gtk_progress_bar_new();
+    gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(progress), TRUE);
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Ready");
+
+    gtk_widget_set_margin_bottom(progress, 6);
+    gtk_widget_set_halign(progress, GTK_ALIGN_CENTER);
+    gtk_box_append(GTK_BOX(main_box), progress);
+
     // button box at bottom
     button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
     gtk_widget_set_halign(button_box, GTK_ALIGN_CENTER);
@@ -363,7 +405,7 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     g_signal_connect_swapped(open_btn, "clicked", G_CALLBACK(open_file_dialog), main_window);
     g_signal_connect_swapped(save_btn, "clicked", G_CALLBACK(on_save_file), NULL);
-    g_signal_connect_swapped(build_btn, "clicked", G_CALLBACK(build_iso), NULL);
+    g_signal_connect_swapped(build_btn, "clicked", G_CALLBACK(build_iso_clicked), NULL);
 
     gtk_box_append(GTK_BOX(button_box), open_btn);
     gtk_box_append(GTK_BOX(button_box), save_btn);

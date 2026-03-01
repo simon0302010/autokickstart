@@ -64,6 +64,7 @@ typedef struct OpenedFile {
 
 extern GtkWidget *main_window;
 extern GtkWidget *label;
+extern GtkWidget *progress;
 
 extern OpenedFile ks_file;
 extern KickstartOptions options;

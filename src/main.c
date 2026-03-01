@@ -50,6 +50,12 @@ static void build_iso(GCancellable *cancel) {
 
     CHECK_CANCELLED(cancel);
     int pkg_code = download_packages_from_options();
+    if (pkg_code != 0) {
+        g_print("failed to download packages (code %d)\n", pkg_code);
+        show_alert(main_window, "Failed to download required packages. The ISO build has been aborted.");
+        build_running = false;
+        return;
+    }
 
     CHECK_CANCELLED(cancel);
     int create_iso_code = create_iso(ks_path, iso_path, "Output.iso");

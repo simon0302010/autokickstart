@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "cJSON/cJSON.h"
+#include "glib.h"
 #include "globals.h"
 #include "kickstart/kickstart.h"
 #include "utils/utils.h"
@@ -48,7 +49,7 @@ static struct CURLResponse GetHTML(const char * url) {
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
     CURLcode ret = curl_easy_perform(curl);
-    
+
     if (ret != CURLE_OK) {
         char curl_error[256];
         sprintf(curl_error, "Failed to get %s: %s\n", url, curl_easy_strerror(ret));
@@ -280,14 +281,18 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
     char *create_iso_cmd = NULL;
     asprintf(
         &create_iso_cmd,
-        "pkexec mkksiso --ks \"%s\" --add \"%s/\" -V \"%s\" \"%s\" \"%s\"",
+        "pkexec --keep-cwd mkksiso --ks \"%s\" --add \"%s/\" -V \"%s\" \"%s\" \"%s\"",
         ks_path,
         get_pkg_dir(),
         (disk_label && strlen(disk_label) > 0) ? disk_label : "Fedora-Autokickstart",
         input_iso,
         output_iso
     );
+    g_print("executing \"%s\"\n", create_iso_cmd);
     int ret = system(create_iso_cmd);
+    if (ret == -1) {
+        perror("system");
+    }
     free(create_iso_cmd);
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0);
     return ret;

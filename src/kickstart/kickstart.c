@@ -276,8 +276,8 @@ int download_packages_from_options() {
         return 1;
     }
 
-    g_print("pkg dir: %s", get_pkg_dir());
-    g_print("dnf dir: %s", get_dnf_dir());
+    g_print("pkg dir: %s\n", get_pkg_dir());
+    g_print("dnf dir: %s\n", get_dnf_dir());
 
     GString *packages_str = g_string_new("");
 

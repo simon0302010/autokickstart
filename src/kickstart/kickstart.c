@@ -228,8 +228,8 @@ char *write_ks_from_options() {
 
     // configuring local repo
     const char *disk_label = gtk_editable_get_text(GTK_EDITABLE(options.disk_label));
-    fprintf(ks_file.file, "harddrive --partition=LABEL=%s --dir=/packages/\n", (disk_label && strlen(disk_label) > 0) ? disk_label : "Fedora-Autokickstart");
-    fprintf(ks_file.file, "repo --name=local-packages --baseurl=file:///run/install/repo/packages/\n");
+    fprintf(ks_file.file, "harddrive --partition=LABEL=%s --dir=/pkg/\n", (disk_label && strlen(disk_label) > 0) ? disk_label : "Fedora-Autokickstart");
+    fprintf(ks_file.file, "repo --name=local-packages --baseurl=file:///run/install/repo/pkg/\n");
 
     // pre install script
     fprintf(ks_file.file, "%%pre");

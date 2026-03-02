@@ -47,6 +47,7 @@ static void build_iso(GCancellable *cancel) {
     if (iso_path == NULL) {
         g_print("failed to download ISO\n");
         show_alert(main_window, "Failed to download ISO. The build has been aborted.");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download ISO");
         free(ks_path);
         build_running = false;
         return;
@@ -58,6 +59,7 @@ static void build_iso(GCancellable *cancel) {
     if (pkg_code != 0) {
         g_print("failed to download packages (code %d)\n", pkg_code);
         show_alert(main_window, "Failed to download required packages. The ISO build has been aborted.");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download packages");
         free(ks_path);
         free(iso_path);
         build_running = false;
@@ -65,13 +67,15 @@ static void build_iso(GCancellable *cancel) {
     }
 
     CHECK_CANCELLED(cancel);
-    int create_iso_code = create_iso(ks_path, iso_path, "Output.iso");
+    int create_iso_code = create_iso(ks_path, iso_path, "Output.iso", true); // TODO: make overwrite optional
 
     free(iso_path);
     free(ks_path);
 
     if (create_iso_code != 0) {
         g_print("failed to create ISO (code %d)\n", create_iso_code);
+        show_alert(main_window, "Failed to create ISO image");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to create ISO");
         build_running = false;
         return;
     }

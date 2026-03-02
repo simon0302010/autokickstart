@@ -302,11 +302,15 @@ float parse_xorriso(const char *line) {
     return 0.0;
 }
 
-int create_iso(const char *ks_path, const char *input_iso, const char *output_iso) {
+int create_iso(const char *ks_path, const char *input_iso, const char *output_iso, bool overwrite) {
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
     gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Building ISO Image");
 
     const char *disk_label = gtk_editable_get_text(GTK_EDITABLE(options.disk_label));
+
+    if (overwrite) {
+        remove(output_iso);
+    }
 
     char *create_iso_cmd = NULL;
     asprintf(

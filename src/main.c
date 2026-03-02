@@ -88,6 +88,11 @@ static gpointer build_iso_thread(gpointer data) {
 }
 
 static void build_iso_clicked() {
+    if (!is_fedora()) {
+        show_alert(main_window, "This option is only supported on devices running Fedora Linux.");
+        return;
+    }
+
     if (build_running) {
         show_alert(main_window, "Build process is already running. Please wait until the current step is completed to stop the build process.");
         return;

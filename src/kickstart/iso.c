@@ -1,9 +1,9 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <gtk/gtk.h>
 #include <string.h>
-#include <regex.h>
 
 #include "cJSON/cJSON.h"
 #include "globals.h"
@@ -12,9 +12,6 @@
 
 #define MAX_VERSIONS 64
 #define FEDORA_RELEASES_URL "https://fedoraproject.org/releases.json"
-
-static regex_t xorriso_regex;
-static bool xorriso_regex_initialized = 0;
 
 const char *fedora_versions[64];
 const char *fedora_architectures[64];
@@ -276,30 +273,35 @@ void free_fedora_releases() {
 }
 
 float parse_xorriso(const char *line) {
-    if (!xorriso_regex_initialized) {
-        if (regcomp(&xorriso_regex, "Writing:[^%]*([0-9]+(\\.[0-9]+)?)%", REG_EXTENDED) == 0) {
-            xorriso_regex_initialized = true;
-        } else {
-            return 0.0;
+    const char *p = strstr(line, "Writing:");
+    if (p == NULL) return -1.0;
+
+    char value_str[16];
+    int value_str_idx = 0;
+
+    while (*p != 's') {
+        p++;
+    }
+
+    for (int i = 0; p[i] != '\0'; i++) {
+        if (p[i] == '%') {
+            value_str[value_str_idx] = '\0';
+            break;
+        } else if (isdigit(p[i]) || p[i] == '.') {
+            if (value_str_idx >= sizeof(value_str) - 1) {
+                return -1.0;
+            }
+
+            value_str[value_str_idx] = p[i];
+            value_str_idx++;
         }
     }
 
-    regmatch_t matches[3];
+    float res;
 
-    if (regexec(&xorriso_regex, line, 3, matches, 0) == 0) {
-        int start = matches[1].rm_so;
-        int end = matches[1].rm_eo;
+    sscanf(value_str, "%f", &res);
 
-        char progress_str[16];
-        snprintf(progress_str, sizeof(progress_str), "%.*s", end - start, line + start);
-
-        float progress_frac;
-        sscanf(progress_str, "%f", &progress_frac);
-
-        return progress_frac / 100.0;
-    }
-
-    return 0.0;
+    return res;
 }
 
 int create_iso(const char *ks_path, const char *input_iso, const char *output_iso, bool overwrite) {
@@ -315,7 +317,7 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
     char *create_iso_cmd = NULL;
     asprintf(
         &create_iso_cmd,
-        "pkexec --keep-cwd mkksiso --ks \"%s\" --add \"%s/\" -V \"%s\" \"%s\" \"%s\"",
+        "pkexec --keep-cwd mkksiso --ks \"%s\" --add \"%s/\" -V \"%s\" \"%s\" \"%s\" 2>&1",
         ks_path,
         get_pkg_dir(),
         (disk_label && strlen(disk_label) > 0) ? disk_label : "Fedora-Autokickstart",
@@ -342,7 +344,5 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
     free(cmd_out);
     free(create_iso_cmd);
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0);
-    regfree(&xorriso_regex);
-    xorriso_regex_initialized = false;
     return exit_code;
 }

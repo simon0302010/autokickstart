@@ -3,15 +3,18 @@
 #include <curl/curl.h>
 #include <gtk/gtk.h>
 #include <string.h>
+#include <regex.h>
 
 #include "cJSON/cJSON.h"
-#include "glib.h"
 #include "globals.h"
 #include "kickstart/kickstart.h"
 #include "utils/utils.h"
 
 #define MAX_VERSIONS 64
 #define FEDORA_RELEASES_URL "https://fedoraproject.org/releases.json"
+
+static regex_t xorriso_regex;
+static bool xorriso_regex_initialized = 0;
 
 const char *fedora_versions[64];
 const char *fedora_architectures[64];
@@ -272,6 +275,33 @@ void free_fedora_releases() {
     fedora_architectures[0] = NULL;
 }
 
+float parse_xorriso(const char *line) {
+    if (!xorriso_regex_initialized) {
+        if (regcomp(&xorriso_regex, "Writing:[^%]*([0-9]+(\\.[0-9]+)?)%", REG_EXTENDED) == 0) {
+            xorriso_regex_initialized = true;
+        } else {
+            return 0.0;
+        }
+    }
+
+    regmatch_t matches[3];
+
+    if (regexec(&xorriso_regex, line, 3, matches, 0) == 0) {
+        int start = matches[1].rm_so;
+        int end = matches[1].rm_eo;
+
+        char progress_str[16];
+        snprintf(progress_str, sizeof(progress_str), "%.*s", end - start, line + start);
+
+        float progress_frac;
+        sscanf(progress_str, "%f", &progress_frac);
+
+        return progress_frac / 100.0;
+    }
+
+    return 0.0;
+}
+
 int create_iso(const char *ks_path, const char *input_iso, const char *output_iso) {
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
     gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Building ISO Image");
@@ -289,11 +319,26 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
         output_iso
     );
     g_print("executing \"%s\"\n", create_iso_cmd);
-    int ret = system(create_iso_cmd);
-    if (ret == -1) {
-        perror("system");
+
+    FILE *cmd = popen(create_iso_cmd, "r");
+    if (!cmd) {
+        perror("popen");
     }
+    char *cmd_out = NULL;
+    size_t outlen = 0;
+    while (getline(&cmd_out, &outlen, cmd) >= 0) {
+        float parse_out = parse_xorriso(cmd_out);
+        if (parse_out > 0.0 && parse_out <= 1.0) {
+            gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), parse_out);
+        }
+    }
+    int status = pclose(cmd);
+    int exit_code = WEXITSTATUS(status);
+
+    free(cmd_out);
     free(create_iso_cmd);
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0);
-    return ret;
+    regfree(&xorriso_regex);
+    xorriso_regex_initialized = false;
+    return exit_code;
 }

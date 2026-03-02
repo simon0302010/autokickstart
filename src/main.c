@@ -66,7 +66,7 @@ static void build_iso(GCancellable *cancel) {
 
     CHECK_CANCELLED(cancel);
     int create_iso_code = create_iso(ks_path, iso_path, "Output.iso");
-    
+
     free(iso_path);
     free(ks_path);
 
@@ -76,7 +76,9 @@ static void build_iso(GCancellable *cancel) {
         return;
     }
 
-    g_idle_add_once((GSourceOnceFunc)gtk_progress_bar_set_text, GTK_PROGRESS_BAR(progress));
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Finished");
+
+    clean_temp_dir();
 
     build_running = false;
 }

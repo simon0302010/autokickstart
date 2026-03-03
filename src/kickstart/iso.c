@@ -301,7 +301,7 @@ float parse_xorriso(const char *line) {
 
     sscanf(value_str, "%f", &res);
 
-    return res;
+    return res / 100.0;
 }
 
 int create_iso(const char *ks_path, const char *input_iso, const char *output_iso, bool overwrite) {

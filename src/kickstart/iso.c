@@ -331,6 +331,7 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
     char *cmd_out = NULL;
     size_t outlen = 0;
     while (getline(&cmd_out, &outlen, cmd) >= 0) {
+        g_print("%s", cmd_out);
         float parse_out = parse_xorriso(cmd_out);
         if (parse_out > 0.0 && parse_out <= 1.0) {
             gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), parse_out);

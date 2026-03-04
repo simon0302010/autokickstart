@@ -291,7 +291,7 @@ int download_packages_from_options() {
     );
 
     g_string_append(packages_str, dnf_base_cmd);
-    g_string_append(packages_str, " @core");
+    g_string_append(packages_str, " @core grub2-efi-x64 shim-x64 efibootmgr grub2-tools-extra");
 
     guint packages_count = g_list_model_get_n_items(G_LIST_MODEL(options.packages.packages));
     for (guint i = 0; i < packages_count; i++) {

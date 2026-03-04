@@ -24,6 +24,7 @@ GtkWidget *progress;
 KickstartOptions options;
 
 atomic_bool build_running = false;
+GCancellable *build_cancellable = NULL;
 
 static void build_iso_clicked() {
     if (!is_fedora()) {
@@ -32,7 +33,9 @@ static void build_iso_clicked() {
     }
 
     if (atomic_load(&build_running)) {
-        show_alert(main_window, "Build process is already running. Please wait until the current step is completed to stop the build process.");
+        show_alert(main_window, "Build process is already running. It will be aborted after the current step has finished.");
+        if (build_cancellable) { g_cancellable_cancel(build_cancellable); g_object_unref(build_cancellable); }
+        build_cancellable = g_cancellable_new();
         return;
     }
 

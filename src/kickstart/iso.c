@@ -13,8 +13,7 @@
 
 #define MAX_VERSIONS 64
 #define FEDORA_RELEASES_URL "https://fedoraproject.org/releases.json"
-#define CHECK_CANCELLED(ctx) if (g_cancellable_is_cancelled(ctx)) { g_print("build cancelled\n"); g_idle_add(set_progress_text_idle, "Aborted"); g_idle_add(set_progress_frac_idle, GINT_TO_POINTER((int)(1.0 * 100))); return NULL; }
-static GCancellable *build_cancellable = NULL;
+#define CHECK_CANCELLED(ctx, ks, iso, d) if (g_cancellable_is_cancelled(ctx)) { g_print("build cancelled\n"); g_idle_add(set_progress_text_idle, "Aborted"); g_idle_add(set_progress_frac_idle, GINT_TO_POINTER(100)); cleanup_build(d, ks, iso); return NULL; }
 
 const char *fedora_versions[64];
 const char *fedora_architectures[64];
@@ -355,6 +354,18 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
     return exit_code;
 }
 
+static void cleanup_build(BuildISOData *data, char *ks_path, char *iso_path) {
+    if (ks_path) free(ks_path);
+    if (iso_path) free(iso_path);
+    if (data) {
+        g_free(data->disk_label);
+        g_free(data->output_path);
+        g_object_unref(data->cancellable);
+        g_free(data);
+    }
+    atomic_store(&build_running, false);
+}
+
 static gpointer build_iso(gpointer data) {
     BuildISOData *build_data = (BuildISOData *)data;
     GCancellable *cancel = build_data->cancellable;
@@ -362,16 +373,16 @@ static gpointer build_iso(gpointer data) {
 
     atomic_store(&build_running, true);
 
-    CHECK_CANCELLED(cancel);
+    CHECK_CANCELLED(cancel, NULL, NULL, build_data);
     char *ks_path = write_ks_from_options();
     g_print("wrote kickstart file to %s\n", ks_path);
 
-    CHECK_CANCELLED(cancel);
+    CHECK_CANCELLED(cancel, ks_path, NULL, build_data);
     char *iso_link = find_fedora_iso();
     g_idle_add(set_progress_text_idle, "Downloading ISO");
     g_print("downloading suitable iso from: %s\n", iso_link);
 
-    CHECK_CANCELLED(cancel);
+    CHECK_CANCELLED(cancel, ks_path, NULL, build_data);
     char *iso_path = download_iso(iso_link);
     free(iso_link);
     if (iso_path == NULL) {
@@ -384,7 +395,7 @@ static gpointer build_iso(gpointer data) {
     }
     g_print("saved downloaded iso to %s\n", iso_path);
 
-    CHECK_CANCELLED(cancel);
+    CHECK_CANCELLED(cancel, ks_path, iso_path, build_data);
     int pkg_code = download_packages_from_options();
     if (pkg_code != 0) {
         g_print("failed to download packages (code %d)\n", pkg_code);
@@ -396,9 +407,8 @@ static gpointer build_iso(gpointer data) {
         return NULL;
     }
 
-    CHECK_CANCELLED(cancel);
-        int create_iso_code = create_iso(ks_path, iso_path, output_path, build_data->disk_label, true);
-
+    CHECK_CANCELLED(cancel, ks_path, iso_path, build_data);
+    int create_iso_code = create_iso(ks_path, iso_path, output_path, build_data->disk_label, true);
 
     free(iso_path);
     free(ks_path);

@@ -71,5 +71,6 @@ extern OpenedFile ks_file;
 extern KickstartOptions options;
 
 extern atomic_bool build_running;
+extern GCancellable *build_cancellable;
 
 #endif

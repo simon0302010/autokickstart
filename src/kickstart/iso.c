@@ -12,6 +12,9 @@
 
 #define MAX_VERSIONS 64
 #define FEDORA_RELEASES_URL "https://fedoraproject.org/releases.json"
+#define CHECK_CANCELLED(ctx) if (g_cancellable_is_cancelled(ctx)) { g_print("build cancelled\n"); gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Aborted"); gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0); return;  }
+
+static GCancellable *build_cancellable = NULL;
 
 const char *fedora_versions[64];
 const char *fedora_architectures[64];
@@ -346,4 +349,101 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
     free(create_iso_cmd);
     gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0);
     return exit_code;
+}
+
+static void build_iso(GCancellable *cancel) {
+    build_running = true;
+
+    CHECK_CANCELLED(cancel);
+    char *ks_path = write_ks_from_options();
+    g_print("wrote kickstart file to %s\n", ks_path);
+
+    CHECK_CANCELLED(cancel);
+    char *iso_link = find_fedora_iso();
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Downloading ISO");
+    g_print("downloading suitable iso from: %s\n", iso_link);
+
+    CHECK_CANCELLED(cancel);
+    char *iso_path = download_iso(iso_link);
+    free(iso_link);
+    if (iso_path == NULL) {
+        g_print("failed to download ISO\n");
+        show_alert(main_window, "Failed to download ISO. The build has been aborted.");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download ISO");
+        free(ks_path);
+        build_running = false;
+        return;
+    }
+    g_print("saved downloaded iso to %s\n", iso_path);
+
+    CHECK_CANCELLED(cancel);
+    int pkg_code = download_packages_from_options();
+    if (pkg_code != 0) {
+        g_print("failed to download packages (code %d)\n", pkg_code);
+        show_alert(main_window, "Failed to download required packages. The ISO build has been aborted.");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download packages");
+        free(ks_path);
+        free(iso_path);
+        build_running = false;
+        return;
+    }
+
+    CHECK_CANCELLED(cancel);
+    int create_iso_code = create_iso(ks_path, iso_path, "Output.iso", true); // TODO: make overwrite optional
+
+    free(iso_path);
+    free(ks_path);
+
+    if (create_iso_code != 0) {
+        g_print("failed to create ISO (code %d)\n", create_iso_code);
+        show_alert(main_window, "Failed to create ISO image");
+        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to create ISO");
+        build_running = false;
+        return;
+    }
+
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Finished");
+
+    clean_temp_dir();
+
+    build_running = false;
+}
+
+static gpointer build_iso_thread(gpointer data) {
+    build_iso(G_CANCELLABLE(data));
+    g_object_unref(data);
+    return NULL;
+}
+
+static void on_iso_save_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+    GFile *file = gtk_file_dialog_save_finish(GTK_FILE_DIALOG(source_object), res, NULL);
+
+    if (file != NULL) {
+        char *file_path = g_file_get_path(file);
+        g_print("ISO image will be saved to: %s\n", file_path);
+        
+        if (build_cancellable) { g_cancellable_cancel(build_cancellable); g_object_unref(build_cancellable); }
+        build_cancellable = g_cancellable_new();
+        gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
+        g_thread_new("build-iso", build_iso_thread, g_object_ref(build_cancellable));
+
+        g_free(file_path);
+        g_object_unref(file);
+    }
+}
+
+void save_iso() {
+    GtkFileDialog *dialog = gtk_file_dialog_new();
+    gtk_file_dialog_set_title(dialog, "Save ISO");
+    gtk_file_dialog_set_initial_name(dialog, gtk_editable_get_text(GTK_EDITABLE(options.disk_label)));
+    GtkFileFilter *filter = gtk_file_filter_new();
+    gtk_file_filter_add_suffix(filter, "iso");
+    gtk_file_filter_set_name(filter, "ISO Images");
+    GListModel *filters = G_LIST_MODEL(g_list_store_new(GTK_TYPE_FILE_FILTER));
+    g_list_store_append(G_LIST_STORE(filters), filter);
+    gtk_file_dialog_set_filters(dialog, filters);
+    g_object_unref(filter);
+    g_object_unref(filters);
+    gtk_file_dialog_save(dialog, GTK_WINDOW(main_window), NULL, on_iso_save_finish, NULL);
+    g_object_unref(dialog);
 }

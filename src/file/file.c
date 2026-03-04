@@ -4,10 +4,7 @@
 #include <string.h>
 
 #include "cJSON/cJSON.h"
-#include "gio/gio.h"
-#include "glib-object.h"
 #include "globals.h"
-#include "gtk/gtkdropdown.h"
 #include "utils/utils.h"
 #include "locale/timezone.h"
 #include "kickstart/users.h"

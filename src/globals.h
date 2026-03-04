@@ -69,4 +69,6 @@ extern GtkWidget *progress;
 extern OpenedFile ks_file;
 extern KickstartOptions options;
 
+extern bool build_running;
+
 #endif

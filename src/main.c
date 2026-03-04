@@ -25,74 +25,6 @@ KickstartOptions options;
 
 bool build_running = false;
 
-static GCancellable *build_cancellable = NULL;
-
-#define CHECK_CANCELLED(ctx) if (g_cancellable_is_cancelled(ctx)) { g_print("build cancelled\n"); return; }
-
-static void build_iso(GCancellable *cancel) {
-    build_running = true;
-
-    CHECK_CANCELLED(cancel);
-    char *ks_path = write_ks_from_options();
-    g_print("wrote kickstart file to %s\n", ks_path);
-
-    CHECK_CANCELLED(cancel);
-    char *iso_link = find_fedora_iso();
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Downloading ISO");
-    g_print("downloading suitable iso from: %s\n", iso_link);
-
-    CHECK_CANCELLED(cancel);
-    char *iso_path = download_iso(iso_link);
-    free(iso_link);
-    if (iso_path == NULL) {
-        g_print("failed to download ISO\n");
-        show_alert(main_window, "Failed to download ISO. The build has been aborted.");
-        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download ISO");
-        free(ks_path);
-        build_running = false;
-        return;
-    }
-    g_print("saved downloaded iso to %s\n", iso_path);
-
-    CHECK_CANCELLED(cancel);
-    int pkg_code = download_packages_from_options();
-    if (pkg_code != 0) {
-        g_print("failed to download packages (code %d)\n", pkg_code);
-        show_alert(main_window, "Failed to download required packages. The ISO build has been aborted.");
-        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download packages");
-        free(ks_path);
-        free(iso_path);
-        build_running = false;
-        return;
-    }
-
-    CHECK_CANCELLED(cancel);
-    int create_iso_code = create_iso(ks_path, iso_path, "Output.iso", true); // TODO: make overwrite optional
-
-    free(iso_path);
-    free(ks_path);
-
-    if (create_iso_code != 0) {
-        g_print("failed to create ISO (code %d)\n", create_iso_code);
-        show_alert(main_window, "Failed to create ISO image");
-        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to create ISO");
-        build_running = false;
-        return;
-    }
-
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Finished");
-
-    clean_temp_dir();
-
-    build_running = false;
-}
-
-static gpointer build_iso_thread(gpointer data) {
-    build_iso(G_CANCELLABLE(data));
-    g_object_unref(data);
-    return NULL;
-}
-
 static void build_iso_clicked() {
     if (!is_fedora()) {
         show_alert(main_window, "This option is only supported on devices running Fedora Linux.");
@@ -104,10 +36,7 @@ static void build_iso_clicked() {
         return;
     }
 
-    if (build_cancellable) { g_cancellable_cancel(build_cancellable); g_object_unref(build_cancellable); }
-    build_cancellable = g_cancellable_new();
-    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
-    g_thread_new("build-iso", build_iso_thread, g_object_ref(build_cancellable));
+    save_iso(); 
 }
 
 static void toogle_root_password_entry() {

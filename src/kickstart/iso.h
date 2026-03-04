@@ -9,5 +9,6 @@ char *find_fedora_iso();
 int download_file(const char *url, const char *dest);
 void free_fedora_releases();
 int create_iso(const char *ks_path, const char *input_iso, const char *output_iso, bool overwrite);
+void save_iso();
 
 #endif

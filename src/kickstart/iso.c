@@ -448,9 +448,13 @@ static void on_iso_save_dialog_finish(GObject *source_object, GAsyncResult *res,
 }
 
 void open_iso_save_dialog() {
+    const char *label = gtk_editable_get_text(GTK_EDITABLE(options.disk_label));
+    char default_name[strlen(label) + 5];
+    snprintf(default_name, sizeof(default_name), "%s.iso", label);
+
     GtkFileDialog *dialog = gtk_file_dialog_new();
     gtk_file_dialog_set_title(dialog, "Save ISO");
-    gtk_file_dialog_set_initial_name(dialog, gtk_editable_get_text(GTK_EDITABLE(options.disk_label)));
+    gtk_file_dialog_set_initial_name(dialog, default_name);
     GtkFileFilter *filter = gtk_file_filter_new();
     gtk_file_filter_add_suffix(filter, "iso");
     gtk_file_filter_set_name(filter, "ISO Images");

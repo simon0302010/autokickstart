@@ -1,4 +1,5 @@
 #include <curl/curl.h>
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <gtk/gtk.h>
@@ -10,7 +11,6 @@
 #include "locale/locales.h"
 #include "locale/kb.h"
 #include "file/file.h"
-#include "kickstart/kickstart.h"
 #include "globals.h"
 #include "locale/timezone.h"
 #include "kickstart/packages.h"
@@ -23,7 +23,7 @@ GtkWidget *label;
 GtkWidget *progress;
 KickstartOptions options;
 
-bool build_running = false;
+atomic_bool build_running = false;
 
 static void build_iso_clicked() {
     if (!is_fedora()) {
@@ -31,12 +31,12 @@ static void build_iso_clicked() {
         return;
     }
 
-    if (build_running) {
+    if (atomic_load(&build_running)) {
         show_alert(main_window, "Build process is already running. Please wait until the current step is completed to stop the build process.");
         return;
     }
 
-    save_iso(); 
+    open_iso_save_dialog();
 }
 
 static void toogle_root_password_entry() {

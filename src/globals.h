@@ -2,6 +2,7 @@
 #define GLOBALS_H
 
 #include <gtk/gtk.h>
+#include <stdatomic.h>
 
 typedef struct Packages {
     GListStore *packages;
@@ -69,6 +70,6 @@ extern GtkWidget *progress;
 extern OpenedFile ks_file;
 extern KickstartOptions options;
 
-extern bool build_running;
+extern atomic_bool build_running;
 
 #endif

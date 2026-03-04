@@ -48,6 +48,20 @@ void show_alert(GtkWidget *window, const char* msg) {
     g_object_unref(dialog);
 }
 
+static gboolean show_alert_idle(gpointer data) {
+    char *msg = (char *)data;
+    GtkAlertDialog *dialog = gtk_alert_dialog_new("%s", msg);
+    gtk_alert_dialog_set_buttons(dialog, (const char *[]) { "Ok", NULL });
+    gtk_alert_dialog_show(dialog, GTK_WINDOW(main_window));
+    g_object_unref(dialog);
+    g_free(msg);
+    return G_SOURCE_REMOVE;
+}
+
+void show_alert_thread(const char* msg) {
+    g_idle_add(show_alert_idle, g_strdup(msg));
+}
+
 void get_selected_clearpart(char *dest) {
     if (gtk_check_button_get_active(GTK_CHECK_BUTTON(options.clearpart_all))) {
         strcpy(dest, "all");
@@ -114,4 +128,17 @@ void escape_quotes(const char *src, char *dest) {
         }
     }
     dest[j] = '\0';
+}
+
+gboolean set_progress_text_idle(gpointer data) {
+    const char *text = data;
+    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), text);
+    return G_SOURCE_REMOVE;
+}
+
+gboolean set_progress_frac_idle(gpointer data) {
+    int value = GPOINTER_TO_INT(data);
+    double fraction = value / 100.0;
+    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), fraction);
+    return G_SOURCE_REMOVE;
 }

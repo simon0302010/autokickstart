@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <curl/curl.h>
@@ -12,8 +13,7 @@
 
 #define MAX_VERSIONS 64
 #define FEDORA_RELEASES_URL "https://fedoraproject.org/releases.json"
-#define CHECK_CANCELLED(ctx) if (g_cancellable_is_cancelled(ctx)) { g_print("build cancelled\n"); gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Aborted"); gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0); return;  }
-
+#define CHECK_CANCELLED(ctx) if (g_cancellable_is_cancelled(ctx)) { g_print("build cancelled\n"); g_idle_add(set_progress_text_idle, "Aborted"); g_idle_add(set_progress_frac_idle, GINT_TO_POINTER((int)(1.0 * 100))); return NULL; }
 static GCancellable *build_cancellable = NULL;
 
 const char *fedora_versions[64];
@@ -24,6 +24,12 @@ struct CURLResponse {
     char * html;
     size_t size;
 };
+
+typedef struct {
+    GCancellable *cancellable;
+    char *output_path;
+    char *disk_label;
+} BuildISOData;
 
 static size_t WriteHTMLCallback(void * contents, size_t size, size_t nmemb, void * userp) {
     size_t realsize = size * nmemb;
@@ -57,7 +63,7 @@ static struct CURLResponse GetHTML(const char * url) {
         char curl_error[256];
         sprintf(curl_error, "Failed to get %s: %s\n", url, curl_easy_strerror(ret));
         g_print("%s", curl_error);
-        show_alert(main_window, curl_error);
+        show_alert_thread(curl_error);
     }
 
     //long response_code = 0;
@@ -196,7 +202,7 @@ char *find_fedora_iso() {
     cJSON_Delete(root);
 
     g_print("failed to find suitable iso image\n");
-    show_alert(main_window, "Failed to find suitable ISO image");
+    show_alert_thread("Failed to find suitable ISO image");
 
     return NULL;
 }
@@ -213,7 +219,7 @@ static int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow
         if (percentage - last_percentage >= 1.0 || dlnow == dltotal) {
             g_print("download progress: %.1f%% (%ld/%ld bytes)\n",
                     percentage, dlnow, dltotal);
-            gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), percentage / 100.0);
+            g_idle_add(set_progress_frac_idle, GINT_TO_POINTER((int)percentage));
             last_percentage = percentage;
         }
     }
@@ -307,11 +313,9 @@ float parse_xorriso(const char *line) {
     return res / 100.0;
 }
 
-int create_iso(const char *ks_path, const char *input_iso, const char *output_iso, bool overwrite) {
-    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Building ISO Image");
-
-    const char *disk_label = gtk_editable_get_text(GTK_EDITABLE(options.disk_label));
+int create_iso(const char *ks_path, const char *input_iso, const char *output_iso, const char *disk_label, bool overwrite) {
+    g_idle_add(set_progress_frac_idle, GINT_TO_POINTER((int)(0.0 * 100)));
+    g_idle_add(set_progress_text_idle, "Building ISO Image");
 
     if (overwrite) {
         remove(output_iso);
@@ -339,7 +343,7 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
         g_print("%s", cmd_out);
         float parse_out = parse_xorriso(cmd_out);
         if (parse_out > 0.0 && parse_out <= 1.0) {
-            gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), parse_out);
+            g_idle_add(set_progress_frac_idle, GINT_TO_POINTER((int)(parse_out * 100)));
         }
     }
     int status = pclose(cmd);
@@ -347,12 +351,16 @@ int create_iso(const char *ks_path, const char *input_iso, const char *output_is
 
     free(cmd_out);
     free(create_iso_cmd);
-    gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 1.0);
+    g_idle_add(set_progress_frac_idle, GINT_TO_POINTER((int)(1.0 * 100)));
     return exit_code;
 }
 
-static void build_iso(GCancellable *cancel) {
-    build_running = true;
+static gpointer build_iso(gpointer data) {
+    BuildISOData *build_data = (BuildISOData *)data;
+    GCancellable *cancel = build_data->cancellable;
+    char *output_path = build_data->output_path;
+
+    atomic_store(&build_running, true);
 
     CHECK_CANCELLED(cancel);
     char *ks_path = write_ks_from_options();
@@ -360,7 +368,7 @@ static void build_iso(GCancellable *cancel) {
 
     CHECK_CANCELLED(cancel);
     char *iso_link = find_fedora_iso();
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Downloading ISO");
+    g_idle_add(set_progress_text_idle, "Downloading ISO");
     g_print("downloading suitable iso from: %s\n", iso_link);
 
     CHECK_CANCELLED(cancel);
@@ -368,11 +376,11 @@ static void build_iso(GCancellable *cancel) {
     free(iso_link);
     if (iso_path == NULL) {
         g_print("failed to download ISO\n");
-        show_alert(main_window, "Failed to download ISO. The build has been aborted.");
-        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download ISO");
+        show_alert_thread("Failed to download ISO. The build has been aborted.");
+        g_idle_add(set_progress_text_idle, "Failed to download ISO");
         free(ks_path);
-        build_running = false;
-        return;
+        atomic_store(&build_running, false);
+        return NULL;
     }
     g_print("saved downloaded iso to %s\n", iso_path);
 
@@ -380,59 +388,66 @@ static void build_iso(GCancellable *cancel) {
     int pkg_code = download_packages_from_options();
     if (pkg_code != 0) {
         g_print("failed to download packages (code %d)\n", pkg_code);
-        show_alert(main_window, "Failed to download required packages. The ISO build has been aborted.");
-        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to download packages");
+        show_alert_thread("Failed to download required packages. The ISO build has been aborted.");
+        g_idle_add(set_progress_text_idle, "Failed to download packages");
         free(ks_path);
         free(iso_path);
-        build_running = false;
-        return;
+        atomic_store(&build_running, false);
+        return NULL;
     }
 
     CHECK_CANCELLED(cancel);
-    int create_iso_code = create_iso(ks_path, iso_path, "Output.iso", true); // TODO: make overwrite optional
+        int create_iso_code = create_iso(ks_path, iso_path, output_path, build_data->disk_label, true);
+
 
     free(iso_path);
     free(ks_path);
 
     if (create_iso_code != 0) {
         g_print("failed to create ISO (code %d)\n", create_iso_code);
-        show_alert(main_window, "Failed to create ISO image");
-        gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Failed to create ISO");
-        build_running = false;
-        return;
+        show_alert_thread("Failed to create ISO image");
+        g_idle_add(set_progress_text_idle, "Failed to create ISO");
+        atomic_store(&build_running, false);
+        return NULL;
     }
 
-    gtk_progress_bar_set_text(GTK_PROGRESS_BAR(progress), "Finished");
+    g_idle_add(set_progress_text_idle, "Finished");
 
     clean_temp_dir();
 
-    build_running = false;
-}
+    atomic_store(&build_running, false);
 
-static gpointer build_iso_thread(gpointer data) {
-    build_iso(G_CANCELLABLE(data));
-    g_object_unref(data);
+    g_free(build_data->disk_label);
+    g_free(build_data->output_path);
+    g_object_unref(build_data->cancellable);
+    g_free(build_data);
     return NULL;
 }
 
-static void on_iso_save_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
+static void on_iso_save_dialog_finish(GObject *source_object, GAsyncResult *res, gpointer user_data) {
     GFile *file = gtk_file_dialog_save_finish(GTK_FILE_DIALOG(source_object), res, NULL);
 
     if (file != NULL) {
         char *file_path = g_file_get_path(file);
         g_print("ISO image will be saved to: %s\n", file_path);
-        
+
         if (build_cancellable) { g_cancellable_cancel(build_cancellable); g_object_unref(build_cancellable); }
         build_cancellable = g_cancellable_new();
         gtk_progress_bar_set_fraction(GTK_PROGRESS_BAR(progress), 0.0);
-        g_thread_new("build-iso", build_iso_thread, g_object_ref(build_cancellable));
+
+        BuildISOData *data = g_new(BuildISOData, 1);
+        data->cancellable = g_object_ref(build_cancellable);
+        data->output_path = g_strdup(file_path);
+        data->disk_label = g_strdup(gtk_editable_get_text(GTK_EDITABLE(options.disk_label)));
+
+        g_thread_new("build-iso", build_iso, data);
 
         g_free(file_path);
         g_object_unref(file);
     }
 }
 
-void save_iso() {
+void open_iso_save_dialog() {
     GtkFileDialog *dialog = gtk_file_dialog_new();
     gtk_file_dialog_set_title(dialog, "Save ISO");
     gtk_file_dialog_set_initial_name(dialog, gtk_editable_get_text(GTK_EDITABLE(options.disk_label)));
@@ -444,6 +459,6 @@ void save_iso() {
     gtk_file_dialog_set_filters(dialog, filters);
     g_object_unref(filter);
     g_object_unref(filters);
-    gtk_file_dialog_save(dialog, GTK_WINDOW(main_window), NULL, on_iso_save_finish, NULL);
+    gtk_file_dialog_save(dialog, GTK_WINDOW(main_window), NULL, on_iso_save_dialog_finish, NULL);
     g_object_unref(dialog);
 }

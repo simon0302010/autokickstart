@@ -265,8 +265,23 @@ char *write_ks_from_options() {
 }
 
 static bool is_status_line(const char *line) {
-    size_t len = strlen(line);
-    return len > 0 && line[len - 1] == '\r';
+    if (strlen(line) == 0) return false;
+    if (line[0] != '[') return false;
+
+    const char *start = strchr(line, ']');
+    if (start == NULL) return false;
+    start += 2;
+
+    for (int i = 0; start[i] && !isspace(start[i]); i++) {
+        char c = start[i];
+        if (!(islower(c) || isdigit(c) ||
+              c == '.' || c == '_' ||
+              c == '+' || c == '-')) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static int run_and_parse_dnf(const char *command) {

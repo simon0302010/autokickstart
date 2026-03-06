@@ -296,7 +296,8 @@ static int run_and_parse_dnf(const char *command) {
 
     FILE *fp = fdopen(master, "r");
     char line[256];
-    
+
+    int previous_dnf_progress = 0;
     while (fgets(line, sizeof(line), fp) != NULL) {
         if (is_status_line(line)) {
             const char *p = strchr(line, ']');
@@ -310,8 +311,11 @@ static int run_and_parse_dnf(const char *command) {
                 if (idx > 0) {
                     int res;
                     sscanf(value_str, "%d", &res);
+                    if (res < 0 || res > 100) continue;
+                    if (res == previous_dnf_progress) continue;
+                    previous_dnf_progress = res;
                     g_idle_add(set_progress_frac_idle, GINT_TO_POINTER(res));
-                    g_print("package download progress: %i%%", res);
+                    g_print("package download progress: %i%%\n", res);
                 }
             }
         }

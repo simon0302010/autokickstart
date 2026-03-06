@@ -9,6 +9,9 @@
 #include <gtk/gtk.h>
 #include <unistd.h>
 #include <ftw.h>
+#include <pty.h>
+#include <wordexp.h>
+#include <sys/wait.h>
 
 #include "kickstart.h"
 #include "utils/utils.h"
@@ -261,6 +264,68 @@ char *write_ks_from_options() {
     return ks_file.path;
 }
 
+static bool is_status_line(const char *line) {
+    if (line[0] != '[') return false;
+    size_t len = strlen(line);
+    if (len == 0) return false;
+    return line[len - 1] == '\r';
+}
+
+static int run_and_parse_dnf(const char *command) {
+    int master;
+    pid_t pid = forkpty(&master, NULL, NULL, NULL);
+
+    if (pid == 0) {
+        wordexp_t we;
+        wordexp(command, &we, 0);
+
+        execvp(we.we_wordv[0], we.we_wordv);
+
+        perror("execvp");
+        wordfree(&we);
+        _exit(1);
+    } else if (pid < 0) {
+        perror("forkpty");
+        return 1;
+    }
+
+    char buf[256];
+    ssize_t n;
+    while ((n = read(master, buf, sizeof(buf) - 1)) > 0) {
+        if (is_status_line(buf)) { 
+            const char *p = strchr(buf, ']');
+            if (p == NULL) continue;
+
+            char value_str[16];
+            int value_str_idx = 0;
+
+            for (int i = 0; p[i] != '\0'; i++) {
+                if (p[i] == '%') {
+                    value_str[value_str_idx] = '\0';
+                    break;
+                } else if (isdigit(p[i])) {
+                    if (value_str_idx >= sizeof(value_str) - 1) {
+                        return -1.0;
+                    }
+
+                    value_str[value_str_idx] = p[i];
+                    value_str_idx++;
+                }
+            }
+
+            int res;
+            sscanf(value_str, "%i", &res);
+
+            g_idle_add(set_progress_frac_idle, GINT_TO_POINTER(res)); 
+        }
+    }
+    close(master);
+
+    int status;
+    waitpid(pid, &status, 0);
+    return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
+}
+
 int download_packages_from_options() {
     if (!is_fedora()) return 2;
 
@@ -302,9 +367,7 @@ int download_packages_from_options() {
 
     // TODO: improve error handling
 
-    if (system(packages_str->str) != 0) {
-        perror("system");
-    }
+    int pkg_cmd_out = run_and_parse_dnf(packages_str->str);
 
     g_idle_add(set_progress_frac_idle, GINT_TO_POINTER((int)(1.0 * 100)));
 

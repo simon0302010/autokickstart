@@ -265,11 +265,20 @@ static void activate(GtkApplication *app, gpointer user_data) {
     // packages (TODO)
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Packages:"), 0, 11, 1, 1);
 
+    GtkWidget *pkg_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+
+    GtkWidget *repos_button = gtk_button_new_with_label("Additional Repositories");
+    gtk_widget_set_hexpand(repos_button, TRUE);
+    gtk_widget_set_tooltip_text(repos_button, "Configures additional DNF repositories that may be used as sources for package installation on the installed system.");
+    gtk_box_append(GTK_BOX(pkg_box), repos_button);
+
     GtkWidget *packages_button = gtk_button_new_with_label("Manage Packages");
     gtk_widget_set_hexpand(packages_button, TRUE);
     gtk_widget_set_tooltip_text(packages_button, "This describes the software packages to be installed. You can specify packages by environment, group, or by their package names.");
     g_signal_connect(G_OBJECT(packages_button), "clicked", G_CALLBACK(open_package_management), NULL);
-    gtk_grid_attach(GTK_GRID(form_grid), packages_button, 1, 11, 1, 1);
+    gtk_box_append(GTK_BOX(pkg_box), packages_button);
+
+    gtk_grid_attach(GTK_GRID(form_grid), pkg_box, 1, 11, 1, 1);
 
     // what to do after installation
     gtk_grid_attach(GTK_GRID(form_grid), create_label("After Installation:"), 0, 12, 1, 1);

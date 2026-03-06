@@ -72,7 +72,7 @@ int clean_temp_dir() {
     if (nftw(temp_dir, remove_file, 64, FTW_DEPTH | FTW_PHYS) == -1) {
         perror("nftw");
     }
-    
+
     memset(temp_dir, '\0', sizeof(temp_dir));
     memset(pkg_dir, '\0', sizeof(pkg_dir));
     memset(dnf_dir, '\0', sizeof(dnf_dir));
@@ -265,10 +265,8 @@ char *write_ks_from_options() {
 }
 
 static bool is_status_line(const char *line) {
-    if (line[0] != '[') return false;
     size_t len = strlen(line);
-    if (len == 0) return false;
-    return line[len - 1] == '\r';
+    return len > 0 && line[len - 1] == '\r';
 }
 
 static int run_and_parse_dnf(const char *command) {
@@ -278,9 +276,7 @@ static int run_and_parse_dnf(const char *command) {
     if (pid == 0) {
         wordexp_t we;
         wordexp(command, &we, 0);
-
         execvp(we.we_wordv[0], we.we_wordv);
-
         perror("execvp");
         wordfree(&we);
         _exit(1);
@@ -289,38 +285,29 @@ static int run_and_parse_dnf(const char *command) {
         return 1;
     }
 
-    char buf[256];
-    ssize_t n;
-    while ((n = read(master, buf, sizeof(buf) - 1)) > 0) {
-        if (is_status_line(buf)) { 
-            const char *p = strchr(buf, ']');
-            if (p == NULL) continue;
-
-            char value_str[16];
-            int value_str_idx = 0;
-
-            for (int i = 0; p[i] != '\0'; i++) {
-                if (p[i] == '%') {
-                    value_str[value_str_idx] = '\0';
-                    break;
-                } else if (isdigit(p[i])) {
-                    if (value_str_idx >= sizeof(value_str) - 1) {
-                        return -1.0;
-                    }
-
-                    value_str[value_str_idx] = p[i];
-                    value_str_idx++;
+    FILE *fp = fdopen(master, "r");
+    char line[256];
+    
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        if (is_status_line(line)) {
+            const char *p = strchr(line, ']');
+            if (p) {
+                char value_str[16] = {0};
+                int idx = 0;
+                for (int i = 0; p[i] && idx < 15; i++) {
+                    if (p[i] == '%') break;
+                    if (isdigit(p[i])) value_str[idx++] = p[i];
+                }
+                if (idx > 0) {
+                    int res;
+                    sscanf(value_str, "%d", &res);
+                    g_idle_add(set_progress_frac_idle, GINT_TO_POINTER(res));
                 }
             }
-
-            int res;
-            sscanf(value_str, "%i", &res);
-
-            g_idle_add(set_progress_frac_idle, GINT_TO_POINTER(res)); 
         }
     }
-    close(master);
 
+    fclose(fp);
     int status;
     waitpid(pid, &status, 0);
     return WIFEXITED(status) ? WEXITSTATUS(status) : 1;

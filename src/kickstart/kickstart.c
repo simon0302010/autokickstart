@@ -311,9 +311,9 @@ static int run_and_parse_dnf(const char *command) {
                     int res;
                     sscanf(value_str, "%d", &res);
                     g_idle_add(set_progress_frac_idle, GINT_TO_POINTER(res));
+                    g_print("package download progress: %i%%", res);
                 }
             }
-            g_print("%s\n", line);
         }
     }
 

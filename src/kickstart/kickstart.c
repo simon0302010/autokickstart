@@ -270,18 +270,12 @@ static bool is_status_line(const char *line) {
 
     const char *start = strchr(line, ']');
     if (start == NULL) return false;
-    start += 2;
+    start++;
+    while (*start == ' ') start++;
 
-    for (int i = 0; start[i] && !isspace(start[i]); i++) {
-        char c = start[i];
-        if (!(islower(c) || isdigit(c) ||
-              c == '.' || c == '_' ||
-              c == '+' || c == '-')) {
-            return true;
-        }
-    }
+    if (*start == '\0') return false;
 
-    return false;
+    return !islower((unsigned char)*start);
 }
 
 static int run_and_parse_dnf(const char *command) {

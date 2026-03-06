@@ -304,11 +304,6 @@ static int run_and_parse_dnf(const char *command) {
     char line[256];
     
     while (fgets(line, sizeof(line), fp) != NULL) {
-        size_t len = strlen(line);
-        while (len > 0 && isspace(line[len - 1])) {
-            line[--len] = '\0';
-        }
-        
         if (is_status_line(line)) {
             const char *p = strchr(line, ']');
             if (p) {

@@ -1,6 +1,7 @@
 #include <gtk/gtk.h>
 #include <stdlib.h>
 
+#include "glib-object.h"
 #include "utils/utils.h"
 #include "globals.h"
 
@@ -107,10 +108,26 @@ User *add_user_to_list() {
     return user;
 }
 
+static gboolean on_close_request(GtkWindow *window, gpointer user_data) {
+    for (size_t i = 0; i < options.users.count; i++) {
+        User *user = options.users.list[i];
+        const char *username = gtk_editable_get_text(GTK_EDITABLE(user->username));
+
+        if (strcmp(username, "") == 0) {
+            show_alert(GTK_WIDGET(window), "Some usernames appear to be empty");
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
 void new_users_window() {
     GtkWidget *window = gtk_window_new();
     gtk_window_set_title(GTK_WINDOW(window), "Manage Users");
     gtk_window_set_default_size(GTK_WINDOW(window), 400, 500);
+
+    g_signal_connect(window, "close-request", G_CALLBACK(on_close_request), NULL);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_widget_set_margin_start(main_box, 15);

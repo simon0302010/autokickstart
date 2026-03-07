@@ -185,7 +185,6 @@ char *write_ks_from_options() {
     }
     fprintf(ks_file.file, "%%end\n");
 
-    // users (TODO: remember to check if username is empty)
     for (size_t i = 0; i < options.users.count; i++) {
         User *user = options.users.list[i];
         const char *username = gtk_editable_get_text(GTK_EDITABLE(user->username));

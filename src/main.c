@@ -67,6 +67,10 @@ static void activate(GtkApplication *app, gpointer user_data) {
     gtk_window_set_title(GTK_WINDOW(main_window), "Auto Kickstart");
     gtk_window_set_default_size(GTK_WINDOW(main_window), 400, 500);
 
+    if (!is_fedora()) {
+        show_alert(main_window, "Due to not running on Fedora this program will launch with limited functionality");
+    }
+
     // main vertical box
     main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_margin_start(main_box, 15);
@@ -262,7 +266,6 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     gtk_grid_attach(GTK_GRID(form_grid), users_groups_box, 1, 10, 1, 1);
 
-    // packages (TODO)
     gtk_grid_attach(GTK_GRID(form_grid), create_label("Packages:"), 0, 11, 1, 1);
 
     GtkWidget *pkg_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);

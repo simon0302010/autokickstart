@@ -6,7 +6,6 @@ Autokickstart is a tool designed to create fully automated, offline Fedora insta
 
 - Network connection
 - Computer running Fedora Linux
-- libcurl, GTK4, `createrepo_c` and `mkksiso` installed
 
 ## Features
 
@@ -19,13 +18,19 @@ Autokickstart is a tool designed to create fully automated, offline Fedora insta
 
 ## Installation
 
-1. Begin by cloning the GitHub repository
+1. Install build dependencies
+    ```bash
+    sudo dnf install gcc make cmake libcurl-devel gtk4-devel createrepo_c mkksiso
+    ```
+    > The program will not be able to create the ISO itself when `createrepo_c` and `mkksiso` are not installed
+
+2. Begin by cloning the GitHub repository
     ```bash
     git clone https://github.com/simon0302010/autokickstart.git
     cd autokickstart
     ```
 
-2. Build and install it
+3. Build and install it
     ```bash
     mkdir build
     cd build
